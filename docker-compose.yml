@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  # --- 1. INFRAESTRUCTURA (BD, Seguridad, Rutas, Service Discovery) ---
+  postgres:
+    image: postgres:16
+    container_name: flowbox-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: flowbox_user
+      POSTGRES_PASSWORD: flowbox_pass
+      POSTGRES_DB: flowboxdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    container_name: flowbox-keycloak
+    command: start-dev
+    ports:
+      - "8088:8080" # Puerto 8088 para admin, no choca con el gateway
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_DATABASE: flowboxdb
+      KC_DB_USERNAME: flowbox_user
+      KC_DB_PASSWORD: flowbox_pass
+      KC_DB: postgres
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    depends_on:
+      - postgres
+
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend:latest
+    platform: linux/arm64
+    container_name: osrm
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./osrm-data:/data
+    command: >
+      osrm-routed /data/argentina-latest.osrm
+
+  eureka-server:
+    build: ./ms-eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+
+  # --- 2. MICROSERVICIOS DE LA APLICACIÓN ---
+  ms-solicitudes:
+    build: ./ms-solicitudes
+    container_name: ms-solicitudes
+    ports:
+      - "8081:8081"
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flowboxdb
+      SPRING_DATASOURCE_USERNAME: flowbox_user
+      SPRING_DATASOURCE_PASSWORD: flowbox_pass
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/tpi-backend
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+    depends_on:
+      - postgres
+      - keycloak
+      - eureka-server
+
+  ms-logistica:
+    build: ./ms-logistica
+    container_name: ms-logistica
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flowboxdb
+      SPRING_DATASOURCE_USERNAME: flowbox_user
+      SPRING_DATASOURCE_PASSWORD: flowbox_pass
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/tpi-backend
+      APP_OSRM_BASE-URL: http://osrm-backend:5000
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+    depends_on:
+      - postgres
+      - keycloak
+      - osrm
+      - eureka-server
+
+  ms-flota:
+    build: ./tpi-flota-viajes
+    container_name: ms-flota
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flowboxdb
+      SPRING_DATASOURCE_USERNAME: flowbox_user
+      SPRING_DATASOURCE_PASSWORD: flowbox_pass
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/tpi-backend
+      API_LOGISTICA_URL: http://ms-logistica:8082 # Comunicación interna
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+    depends_on:
+      - postgres
+      - keycloak
+      - ms-logistica
+      - eureka-server
+
+  # --- 3. API GATEWAY ---
+  api-gateway:
+    build: ./e-commerce-gateway-main
+    container_name: api-gateway
+    ports:
+      - "8080:8080" # Punto de entrada principal
+    environment:
+      SERVER_PORT: 8080
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI: http://keycloak:8080/realms/tpi-backend
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      # URLs de los servicios (usando nombres de Docker)
+      MS_SOLICITUDES_URL: lb://MS-SOLICITUDES
+      MS_FLOTA_URL: lb://MS-FLOTA
+      MS_LOGISTICA_URL: lb://MS-LOGISTICA
+    depends_on:
+      - ms-solicitudes
+      - ms-flota
+      - ms-logistica
+      - eureka-server
+
+volumes:
+  postgres_data:
+  keycloak_data:

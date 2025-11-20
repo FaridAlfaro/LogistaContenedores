@@ -1,0 +1,36 @@
+server:
+  port: ${SERVER_PORT:8081} # Usar variable de entorno
+
+spring:
+    application:
+        name: ms-solicitudes # Nombre para Eureka
+    datasource:
+        url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/flowboxdb}
+        username: ${SPRING_DATASOURCE_USERNAME:flowbox_user}
+        password: ${SPRING_DATASOURCE_PASSWORD:flowbox_pass}
+    jpa:
+        hibernate:
+            ddl-auto: update # 'update' o 'validate' en producción, 'create' para tests
+        show-sql: true
+        properties:
+            hibernate:
+                connection:
+                    time_zone: UTC
+    oauth2:
+        resourceserver:
+            jwt:
+                issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI:http://localhost:8088/realms/tpi-backend}
+    security:
+        oauth2:
+            resourceserver:
+                jwt:
+                    issuer-uri: http://localhost:8081/realms/TPI
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka}

@@ -1,0 +1,91 @@
+### LogistaContenedores - API Gateway Test
+### Base URL: http://localhost:8080
+### Documentación: Consultar ENDPOINTS.md en ms-solicitudes/
+
+@baseUrl = http://localhost:8080
+@token_cliente = YOUR_CLIENTE_TOKEN_HERE
+@token_operador = YOUR_OPERADOR_TOKEN_HERE
+@nro_solicitud = 
+
+### ========================================
+### SOLICITUDES (ms-solicitudes)
+### ========================================
+
+### 1. Crear nueva solicitud (Rol: CLIENTE)
+# Este endpoint crea una nueva solicitud y devuelve un número de solicitud único
+# La solicitud se crea en estado BORRADOR
+POST {{baseUrl}}/api/v1/solicitudes
+Authorization: Bearer {{token_cliente}}
+Content-Type: application/json
+
+{
+  "idCliente": "cliente-001",
+  "idContenedor": "contenedor-99",
+  "origen": {
+    "dir": "Puerto Buenos Aires",
+    "lat": -34.6037,
+    "lon": -58.3816
+  },
+  "destino": {
+    "dir": "Puerto La Plata",
+    "lat": -34.7912,
+    "lon": -57.9736
+  }
+}
+
+###
+### 2. Obtener solicitud por número (Rol: CLIENTE)
+# Obtiene los detalles de una solicitud específica usando su número (nro)
+# Reemplaza "{{nro_solicitud}}" con el número devuelto por la creación
+GET {{baseUrl}}/api/v1/solicitudes/{{nro_solicitud}}
+Authorization: Bearer {{token_cliente}}
+
+###
+### 3. Listar solicitudes pendientes (Rol: OPERADOR)
+# Lista todas las solicitudes en estado BORRADOR
+# Solo accesible para operadores
+GET {{baseUrl}}/api/v1/solicitudes/pendientes
+Authorization: Bearer {{token_operador}}
+
+###
+### 4. Aceptar solicitud (Rol: OPERADOR)
+# Cambia el estado de una solicitud de BORRADOR a ACEPTADA
+# Requiere el número de solicitud como parámetro de ruta
+PUT {{baseUrl}}/api/v1/solicitudes/{{nro_solicitud}}/aceptar
+Authorization: Bearer {{token_operador}}
+
+###
+### ========================================
+### INSTRUCCIONES DE USO
+### ========================================
+
+# 1. Obtener tokens de Keycloak:
+#    POST http://localhost:8081/realms/TPI/protocol/openid-connect/token
+#    Body (form-data):
+#      - grant_type: password
+#      - client_id: <your-client-id>
+#      - username: <usuario-cliente>
+#      - password: <password>
+#
+#    Respuesta incluye "access_token" que colocas en {{token_cliente}}
+
+# 2. Flujo de prueba recomendado:
+#    a) Crear una solicitud (endpoint 1) como CLIENTE
+#    b) Copiar el nro_solicitud devuelto y ponerlo en {{nro_solicitud}}
+#    c) Obtener detalles de la solicitud (endpoint 2) como CLIENTE
+#    d) Listar pendientes (endpoint 3) como OPERADOR
+#    e) Aceptar la solicitud (endpoint 4) como OPERADOR
+#    f) Obtener detalles nuevamente para ver estado = ACEPTADA
+
+# 3. Variables de entorno:
+#    - {{baseUrl}}: URL base del API Gateway (por defecto 8080)
+#    - {{token_cliente}}: Token JWT con rol CLIENTE
+#    - {{token_operador}}: Token JWT con rol OPERADOR
+#    - {{nro_solicitud}}: Número de la solicitud a manipular
+
+# 4. Extensiones recomendadas para VS Code:
+#    - REST Client (humao.rest-client)
+#    - Thunder Client
+#    - Hoppscotch (en línea)
+
+### Fin de colección de pruebas

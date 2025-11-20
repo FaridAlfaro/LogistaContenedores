@@ -1,0 +1,172 @@
+{
+  "info": {
+    "name": "LogistaContenedores API Gateway",
+    "description": "Colección de endpoints para probar los microservicios a través del API Gateway en puerto 8080",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Solicitudes (ms-solicitudes)",
+      "item": [
+        {
+          "name": "Crear nueva solicitud",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('nro_solicitud', jsonData.nroSolicitud);",
+                  "  pm.test('Solicitud creada exitosamente', function() {",
+                  "    pm.expect(jsonData.estado).to.equal('BORRADOR');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCliente\": \"cliente-001\",\n  \"idContenedor\": \"contenedor-99\",\n  \"origen\": {\n    \"dir\": \"Puerto Buenos Aires\",\n    \"lat\": -34.6037,\n    \"lon\": -58.3816\n  },\n  \"destino\": {\n    \"dir\": \"Puerto La Plata\",\n    \"lat\": -34.7912,\n    \"lon\": -57.9736\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/solicitudes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "solicitudes"
+              ]
+            },
+            "description": "Crea una nueva solicitud de transporte.\nRol requerido: CLIENTE\nEstado inicial: BORRADOR"
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener solicitud por número",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_cliente}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/solicitudes/{{nro_solicitud}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "solicitudes",
+                "{{nro_solicitud}}"
+              ]
+            },
+            "description": "Obtiene los detalles de una solicitud específica.\nRol requerido: CLIENTE"
+          },
+          "response": []
+        },
+        {
+          "name": "Listar solicitudes pendientes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_operador}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/solicitudes/pendientes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "solicitudes",
+                "pendientes"
+              ]
+            },
+            "description": "Lista todas las solicitudes en estado BORRADOR (pendientes de aceptación).\nRol requerido: OPERADOR"
+          },
+          "response": []
+        },
+        {
+          "name": "Aceptar solicitud",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_operador}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/solicitudes/{{nro_solicitud}}/aceptar",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "solicitudes",
+                "{{nro_solicitud}}",
+                "aceptar"
+              ]
+            },
+            "description": "Cambia el estado de una solicitud de BORRADOR a ACEPTADA.\nRol requerido: OPERADOR"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token_cliente",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token_operador",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "nro_solicitud",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
