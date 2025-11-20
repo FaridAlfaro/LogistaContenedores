@@ -3,10 +3,35 @@
 ### Documentación: Consultar ENDPOINTS.md en ms-solicitudes/
 
 @baseUrl = http://localhost:8080
-@token_cliente = YOUR_CLIENTE_TOKEN_HERE
-@token_operador = YOUR_OPERADOR_TOKEN_HERE
+@keycloakUrl = http://localhost:8081
+@token_cliente = 
+@token_operador = 
 @nro_solicitud = 
 
+### ========================================
+### PASO 0: OBTENER TOKENS DE KEYCLOAK
+### ========================================
+
+### 0.1 Obtener token CLIENTE (usuario: cliente / password: cliente123)
+# INSTRUCCIONES:
+# 1. Ejecuta esta petición
+# 2. Copia el valor de "access_token" de la respuesta
+# 3. Pégalo en la variable @token_cliente (arriba)
+# 4. Repite para el token OPERADOR (paso 0.2)
+POST {{keycloakUrl}}/realms/TPI/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=public-client&username=cliente&password=cliente123&scope=openid
+
+###
+### 0.2 Obtener token OPERADOR (usuario: operador / password: operador123)
+# Ejecuta esta petición y copia el access_token
+POST {{keycloakUrl}}/realms/TPI/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=public-client&username=operador&password=operador123&scope=openid
+
+###
 ### ========================================
 ### SOLICITUDES (ms-solicitudes)
 ### ========================================
@@ -14,6 +39,7 @@
 ### 1. Crear nueva solicitud (Rol: CLIENTE)
 # Este endpoint crea una nueva solicitud y devuelve un número de solicitud único
 # La solicitud se crea en estado BORRADOR
+# IMPORTANTE: Usa el token_cliente que obtuviste en paso 0.1
 POST {{baseUrl}}/api/v1/solicitudes
 Authorization: Bearer {{token_cliente}}
 Content-Type: application/json
@@ -33,59 +59,107 @@ Content-Type: application/json
   }
 }
 
+# RESPUESTA ESPERADA:
+# {
+#   "nroSolicitud": "xxxxxxxx",
+#   "estado": "BORRADOR"
+# }
+# Copia el nroSolicitud y pégalo en @nro_solicitud (arriba)
+
 ###
 ### 2. Obtener solicitud por número (Rol: CLIENTE)
 # Obtiene los detalles de una solicitud específica usando su número (nro)
-# Reemplaza "{{nro_solicitud}}" con el número devuelto por la creación
+# IMPORTANTE: Reemplaza {{nro_solicitud}} con el número que obtuviste en paso 1
 GET {{baseUrl}}/api/v1/solicitudes/{{nro_solicitud}}
 Authorization: Bearer {{token_cliente}}
+
+# RESPUESTA ESPERADA:
+# {
+#   "nroSolicitud": "xxxxxxxx",
+#   "estado": "BORRADOR",
+#   "costoEstimado": null,
+#   "tiempoEstimado": null,
+#   ...
+# }
 
 ###
 ### 3. Listar solicitudes pendientes (Rol: OPERADOR)
 # Lista todas las solicitudes en estado BORRADOR
 # Solo accesible para operadores
+# IMPORTANTE: Usa el token_operador que obtuviste en paso 0.2
 GET {{baseUrl}}/api/v1/solicitudes/pendientes
 Authorization: Bearer {{token_operador}}
+
+# RESPUESTA ESPERADA:
+# [
+#   {
+#     "nroSolicitud": "xxxxxxxx",
+#     "estado": "BORRADOR",
+#     ...
+#   }
+# ]
 
 ###
 ### 4. Aceptar solicitud (Rol: OPERADOR)
 # Cambia el estado de una solicitud de BORRADOR a ACEPTADA
 # Requiere el número de solicitud como parámetro de ruta
+# IMPORTANTE: Usa el token_operador y reemplaza {{nro_solicitud}}
 PUT {{baseUrl}}/api/v1/solicitudes/{{nro_solicitud}}/aceptar
 Authorization: Bearer {{token_operador}}
 
+# RESPUESTA ESPERADA:
+# {
+#   "nroSolicitud": "xxxxxxxx",
+#   "estado": "ACEPTADA",
+#   ...
+# }
+
 ###
 ### ========================================
-### INSTRUCCIONES DE USO
+### FLUJO COMPLETO DE PRUEBA (EN ORDEN)
 ### ========================================
 
-# 1. Obtener tokens de Keycloak:
-#    POST http://localhost:8081/realms/TPI/protocol/openid-connect/token
-#    Body (form-data):
-#      - grant_type: password
-#      - client_id: <your-client-id>
-#      - username: <usuario-cliente>
-#      - password: <password>
-#
-#    Respuesta incluye "access_token" que colocas en {{token_cliente}}
+# PASO 1: Ejecuta "0.1 Obtener token CLIENTE"
+#   → Copia el access_token y pégalo en @token_cliente
 
-# 2. Flujo de prueba recomendado:
-#    a) Crear una solicitud (endpoint 1) como CLIENTE
-#    b) Copiar el nro_solicitud devuelto y ponerlo en {{nro_solicitud}}
-#    c) Obtener detalles de la solicitud (endpoint 2) como CLIENTE
-#    d) Listar pendientes (endpoint 3) como OPERADOR
-#    e) Aceptar la solicitud (endpoint 4) como OPERADOR
-#    f) Obtener detalles nuevamente para ver estado = ACEPTADA
+# PASO 2: Ejecuta "0.2 Obtener token OPERADOR"
+#   → Copia el access_token y pégalo en @token_operador
 
-# 3. Variables de entorno:
-#    - {{baseUrl}}: URL base del API Gateway (por defecto 8080)
-#    - {{token_cliente}}: Token JWT con rol CLIENTE
-#    - {{token_operador}}: Token JWT con rol OPERADOR
-#    - {{nro_solicitud}}: Número de la solicitud a manipular
+# PASO 3: Ejecuta "1. Crear nueva solicitud"
+#   → Copia nroSolicitud y pégalo en @nro_solicitud
 
-# 4. Extensiones recomendadas para VS Code:
-#    - REST Client (humao.rest-client)
-#    - Thunder Client
-#    - Hoppscotch (en línea)
+# PASO 4: Ejecuta "2. Obtener solicitud por número"
+#   → Verifica que estado = BORRADOR
 
-### Fin de colección de pruebas
+# PASO 5: Ejecuta "3. Listar solicitudes pendientes"
+#   → Debería ver la solicitud creada en la lista
+
+# PASO 6: Ejecuta "4. Aceptar solicitud"
+#   → Cambiar estado a ACEPTADA
+
+# PASO 7: Ejecuta "2. Obtener solicitud por número" nuevamente
+#   → Debería ver que estado = ACEPTADA
+
+###
+### ========================================
+### SOLUCIÓN DE PROBLEMAS
+### ========================================
+
+# ❌ Error "invalid_grant" en paso 0:
+#    → Verifica que Keycloak esté en http://localhost:8081
+#    → Verifica credenciales (usuario/password)
+
+# ❌ Error "401 Unauthorized" en endpoints:
+#    → Verifica que @token_cliente / @token_operador tengan valor
+#    → Verifica que el token no esté vencido (válido 5 min)
+#    → Copia el token sin comillas
+
+# ❌ Error "404 Not Found":
+#    → Verifica que ms-solicitudes esté en http://localhost:8000
+#    → Verifica que el gateway esté en http://localhost:8080
+#    → Verifica que {{nro_solicitud}} sea válido
+
+# ❌ Error "403 Forbidden":
+#    → Token tiene rol incorrecto
+#    → CLIENTE no puede acceder a /pendientes (solo OPERADOR)
+#    → OPERADOR no puede crear solicitudes (solo CLIENTE)
