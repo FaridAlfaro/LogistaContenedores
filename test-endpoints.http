@@ -1,37 +1,20 @@
 ### LogistaContenedores - API Gateway Test
-### Base URL: http://localhost:8080
-### Documentación: Consultar ENDPOINTS.md en ms-solicitudes/
+### Base URL: http://localhost:8085 (Gateway) o http://localhost:8082/8083 (directo)
+### Documentación: Consultar GUIA_TESTING.md
 
-@baseUrl = http://localhost:8080
-@keycloakUrl = http://localhost:8081
-@token_cliente = 
-@token_operador = 
-@nro_solicitud = 
+@baseUrl = http://localhost:8085
+@baseUrlLogistica = http://localhost:8082
+@baseUrlFlota = http://localhost:8083
+@token_cliente = YOUR_CLIENTE_TOKEN_HERE
+@token_operador = YOUR_OPERADOR_TOKEN_HERE
+@token_transportista = YOUR_TRANSPORTISTA_TOKEN_HERE
+@nro_solicitud =
+@idTramo = 1
+@idCamion = 1
+@idTransportista = 1
+@idDeposito = 1
+@idTarifa = 1 
 
-### ========================================
-### PASO 0: OBTENER TOKENS DE KEYCLOAK
-### ========================================
-
-### 0.1 Obtener token CLIENTE (usuario: cliente / password: cliente123)
-# INSTRUCCIONES:
-# 1. Ejecuta esta petición
-# 2. Copia el valor de "access_token" de la respuesta
-# 3. Pégalo en la variable @token_cliente (arriba)
-# 4. Repite para el token OPERADOR (paso 0.2)
-POST {{keycloakUrl}}/realms/TPI/protocol/openid-connect/token
-Content-Type: application/x-www-form-urlencoded
-
-grant_type=password&client_id=public-client&username=cliente&password=cliente123&scope=openid
-
-###
-### 0.2 Obtener token OPERADOR (usuario: operador / password: operador123)
-# Ejecuta esta petición y copia el access_token
-POST {{keycloakUrl}}/realms/TPI/protocol/openid-connect/token
-Content-Type: application/x-www-form-urlencoded
-
-grant_type=password&client_id=public-client&username=operador&password=operador123&scope=openid
-
-###
 ### ========================================
 ### SOLICITUDES (ms-solicitudes)
 ### ========================================
@@ -39,7 +22,6 @@ grant_type=password&client_id=public-client&username=operador&password=operador1
 ### 1. Crear nueva solicitud (Rol: CLIENTE)
 # Este endpoint crea una nueva solicitud y devuelve un número de solicitud único
 # La solicitud se crea en estado BORRADOR
-# IMPORTANTE: Usa el token_cliente que obtuviste en paso 0.1
 POST {{baseUrl}}/api/v1/solicitudes
 Authorization: Bearer {{token_cliente}}
 Content-Type: application/json
@@ -59,107 +41,233 @@ Content-Type: application/json
   }
 }
 
-# RESPUESTA ESPERADA:
-# {
-#   "nroSolicitud": "xxxxxxxx",
-#   "estado": "BORRADOR"
-# }
-# Copia el nroSolicitud y pégalo en @nro_solicitud (arriba)
-
 ###
 ### 2. Obtener solicitud por número (Rol: CLIENTE)
 # Obtiene los detalles de una solicitud específica usando su número (nro)
-# IMPORTANTE: Reemplaza {{nro_solicitud}} con el número que obtuviste en paso 1
+# Reemplaza "{{nro_solicitud}}" con el número devuelto por la creación
 GET {{baseUrl}}/api/v1/solicitudes/{{nro_solicitud}}
 Authorization: Bearer {{token_cliente}}
-
-# RESPUESTA ESPERADA:
-# {
-#   "nroSolicitud": "xxxxxxxx",
-#   "estado": "BORRADOR",
-#   "costoEstimado": null,
-#   "tiempoEstimado": null,
-#   ...
-# }
 
 ###
 ### 3. Listar solicitudes pendientes (Rol: OPERADOR)
 # Lista todas las solicitudes en estado BORRADOR
 # Solo accesible para operadores
-# IMPORTANTE: Usa el token_operador que obtuviste en paso 0.2
 GET {{baseUrl}}/api/v1/solicitudes/pendientes
 Authorization: Bearer {{token_operador}}
-
-# RESPUESTA ESPERADA:
-# [
-#   {
-#     "nroSolicitud": "xxxxxxxx",
-#     "estado": "BORRADOR",
-#     ...
-#   }
-# ]
 
 ###
 ### 4. Aceptar solicitud (Rol: OPERADOR)
 # Cambia el estado de una solicitud de BORRADOR a ACEPTADA
 # Requiere el número de solicitud como parámetro de ruta
-# IMPORTANTE: Usa el token_operador y reemplaza {{nro_solicitud}}
 PUT {{baseUrl}}/api/v1/solicitudes/{{nro_solicitud}}/aceptar
 Authorization: Bearer {{token_operador}}
 
-# RESPUESTA ESPERADA:
-# {
-#   "nroSolicitud": "xxxxxxxx",
-#   "estado": "ACEPTADA",
-#   ...
-# }
+###
+### ========================================
+### MS LOGÍSTICA - Endpoints
+### ========================================
+
+### 1. Crear Depósito
+# Crea un nuevo depósito en el sistema
+POST {{baseUrl}}/api/v1/depositos
+Content-Type: application/json
+
+{
+  "nombre": "Depósito Central Buenos Aires",
+  "direccion": "Av. Corrientes 1234, CABA",
+  "latitud": -34.6037,
+  "longitud": -58.3816,
+  "costoEstadiaDiario": 5000.0
+}
+
+###
+### 2. Crear Tarifa
+# Crea una nueva tarifa vigente desde una fecha
+POST {{baseUrl}}/api/v1/tarifas
+Content-Type: application/json
+
+{
+  "valorKMBase": 150.0,
+  "costoLitroCombustible": 850.0,
+  "fechaVigencia": "2024-01-01"
+}
+
+###
+### 3. Calcular Ruta (GET)
+# Calcula distancia, tiempo y costo estimado de una ruta
+GET {{baseUrl}}/api/v1/rutas/calcular?latOrigen=-34.6037&lonOrigen=-58.3816&latDestino=-34.7912&lonDestino=-57.9736&idTarifa={{idTarifa}}
+
+###
+### 4. Calcular Ruta con Depósitos (GET)
+# Calcula ruta pasando por depósitos intermedios
+GET {{baseUrl}}/api/v1/rutas/calcular?latOrigen=-34.6037&lonOrigen=-58.3816&latDestino=-34.7912&lonDestino=-57.9736&idDepositos={{idDeposito}}&idTarifa={{idTarifa}}
+
+###
+### 5. Planificar Ruta (POST)
+# Planifica una ruta completa con tramos, calculando distancias y costos
+POST {{baseUrl}}/api/v1/rutas/planificar
+Content-Type: application/json
+
+{
+  "nroSolicitud": "SOL-2024-001",
+  "idDepositos": [{{idDeposito}}],
+  "latOrigen": -34.6037,
+  "lonOrigen": -58.3816,
+  "latDestino": -34.7912,
+  "lonDestino": -57.9736,
+  "idTarifa": {{idTarifa}}
+}
+
+###
+### 6. Iniciar Tramo (INTERNO)
+# Marca un tramo como iniciado. Usado internamente por MS Flota
+PUT {{baseUrl}}/api/v1/tramos/{{idTramo}}/iniciar
+
+###
+### 7. Finalizar Tramo (INTERNO)
+# Marca un tramo como finalizado con kilómetros recorridos
+PUT {{baseUrl}}/api/v1/tramos/{{idTramo}}/finalizar?kmRecorridos=125.5
 
 ###
 ### ========================================
-### FLUJO COMPLETO DE PRUEBA (EN ORDEN)
+### MS FLOTA VIAJES - Endpoints
 ### ========================================
 
-# PASO 1: Ejecuta "0.1 Obtener token CLIENTE"
-#   → Copia el access_token y pégalo en @token_cliente
+### 1. Crear Transportista (Rol: OPERADOR)
+# Crea un nuevo transportista en el sistema
+POST {{baseUrl}}/api/flota/transportistas
+Authorization: Bearer {{token_operador}}
+Content-Type: application/json
 
-# PASO 2: Ejecuta "0.2 Obtener token OPERADOR"
-#   → Copia el access_token y pégalo en @token_operador
+{
+  "nombre": "Juan Pérez",
+  "licencia": "LIC12345678",
+  "contacto": "juan.perez@email.com"
+}
 
-# PASO 3: Ejecuta "1. Crear nueva solicitud"
-#   → Copia nroSolicitud y pégalo en @nro_solicitud
+###
+### 2. Crear Camión (Rol: OPERADOR)
+# Registra un nuevo camión asociado a un transportista
+POST {{baseUrl}}/api/flota/camiones
+Authorization: Bearer {{token_operador}}
+Content-Type: application/json
 
-# PASO 4: Ejecuta "2. Obtener solicitud por número"
-#   → Verifica que estado = BORRADOR
+{
+  "dominio": "AY 123 BC",
+  "capacidadPeso": 20000.0,
+  "capacidadVolumen": 50.0,
+  "idTransportista": {{idTransportista}},
+  "costoPorKm": 120.0,
+  "consumoCombustiblePromedio": 2.5
+}
 
-# PASO 5: Ejecuta "3. Listar solicitudes pendientes"
-#   → Debería ver la solicitud creada en la lista
+###
+### 3. Obtener Camión por ID (Rol: OPERADOR)
+# Obtiene los detalles de un camión específico
+GET {{baseUrl}}/api/flota/camiones/{{idCamion}}
+Authorization: Bearer {{token_operador}}
 
-# PASO 6: Ejecuta "4. Aceptar solicitud"
-#   → Cambiar estado a ACEPTADA
+###
+### 4. Obtener Camiones Disponibles (Rol: OPERADOR)
+# Busca camiones disponibles que cumplan con los requisitos de capacidad
+POST {{baseUrl}}/api/flota/camiones/disponibles
+Authorization: Bearer {{token_operador}}
+Content-Type: application/json
 
-# PASO 7: Ejecuta "2. Obtener solicitud por número" nuevamente
-#   → Debería ver que estado = ACEPTADA
+{
+  "capacidadPesoRequerida": 15000.0,
+  "capacidadVolumenRequerida": 40.0
+}
+
+###
+### 5. Obtener Camiones por Transportista (Rol: OPERADOR)
+# Lista todos los camiones de un transportista específico
+GET {{baseUrl}}/api/flota/transportistas/{{idTransportista}}/camiones
+Authorization: Bearer {{token_operador}}
+
+###
+### 6. Iniciar Tramo (Rol: TRANSPORTISTA)
+# Inicia la ejecución de un tramo con un camión específico
+POST {{baseUrl}}/api/flota/tramos/{{idTramo}}/iniciar
+Authorization: Bearer {{token_transportista}}
+Content-Type: application/json
+
+{
+  "dominioCamion": "AY 123 BC"
+}
+
+###
+### 7. Finalizar Tramo (Rol: TRANSPORTISTA)
+# Finaliza un tramo en curso registrando los kilómetros recorridos
+POST {{baseUrl}}/api/flota/tramos/{{idTramo}}/finalizar
+Authorization: Bearer {{token_transportista}}
+Content-Type: application/json
+
+{
+  "dominioCamion": "AY 123 BC",
+  "kmRecorridos": 125.5
+}
 
 ###
 ### ========================================
-### SOLUCIÓN DE PROBLEMAS
+### INSTRUCCIONES DE USO
 ### ========================================
 
-# ❌ Error "invalid_grant" en paso 0:
-#    → Verifica que Keycloak esté en http://localhost:8081
-#    → Verifica credenciales (usuario/password)
+# 1. Obtener tokens de Keycloak:
+#    POST http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token
+#    Body (form-data):
+#      - grant_type: password
+#      - client_id: <your-client-id>
+#      - username: <usuario>
+#      - password: <password>
+#
+#    Respuesta incluye "access_token" que colocas en las variables correspondientes
+#
+#    Ejemplo con cURL:
+#    curl -X POST http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token \
+#      -H "Content-Type: application/x-www-form-urlencoded" \
+#      -d "grant_type=password" \
+#      -d "client_id=<client-id>" \
+#      -d "username=<usuario>" \
+#      -d "password=<password>"
 
-# ❌ Error "401 Unauthorized" en endpoints:
-#    → Verifica que @token_cliente / @token_operador tengan valor
-#    → Verifica que el token no esté vencido (válido 5 min)
-#    → Copia el token sin comillas
+# 2. Flujo de prueba completo recomendado:
+#    
+#    A) MS LOGÍSTICA:
+#       a) Crear depósito (endpoint 1)
+#       b) Crear tarifa (endpoint 2)
+#       c) Calcular ruta (endpoint 3 o 4)
+#       d) Planificar ruta (endpoint 5) - esto crea tramos
+#
+#    B) MS FLOTA:
+#       a) Crear transportista (endpoint 1) - requiere token OPERADOR
+#       b) Crear camión (endpoint 2) - requiere token OPERADOR
+#       c) Obtener camiones disponibles (endpoint 4) - requiere token OPERADOR
+#       d) Iniciar tramo (endpoint 6) - requiere token TRANSPORTISTA
+#       e) Finalizar tramo (endpoint 7) - requiere token TRANSPORTISTA
 
-# ❌ Error "404 Not Found":
-#    → Verifica que ms-solicitudes esté en http://localhost:8000
-#    → Verifica que el gateway esté en http://localhost:8080
-#    → Verifica que {{nro_solicitud}} sea válido
+# 3. Variables de entorno:
+#    - {{baseUrl}}: URL base del API Gateway (por defecto 8085)
+#    - {{baseUrlLogistica}}: URL directa MS Logística (8082)
+#    - {{baseUrlFlota}}: URL directa MS Flota (8083)
+#    - {{token_cliente}}: Token JWT con rol CLIENTE
+#    - {{token_operador}}: Token JWT con rol OPERADOR
+#    - {{token_transportista}}: Token JWT con rol TRANSPORTISTA
+#    - {{nro_solicitud}}: Número de la solicitud a manipular
+#    - {{idTramo}}: ID del tramo (obtenido al planificar ruta)
+#    - {{idCamion}}: ID del camión
+#    - {{idTransportista}}: ID del transportista
+#    - {{idDeposito}}: ID del depósito
+#    - {{idTarifa}}: ID de la tarifa
 
-# ❌ Error "403 Forbidden":
-#    → Token tiene rol incorrecto
-#    → CLIENTE no puede acceder a /pendientes (solo OPERADOR)
-#    → OPERADOR no puede crear solicitudes (solo CLIENTE)
+# 4. Extensiones recomendadas para VS Code:
+#    - REST Client (humao.rest-client) - Permite ejecutar estos archivos .http directamente
+#    - Thunder Client
+#    - Hoppscotch (en línea)
+
+# 5. Swagger UI:
+#    - MS Logística: http://localhost:8082/swagger-ui.html
+#    - MS Flota: http://localhost:8083/swagger-ui.html
+#    - Eureka Dashboard: http://localhost:8761
+
+### Fin de colección de pruebas

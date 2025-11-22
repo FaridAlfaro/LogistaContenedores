@@ -8,12 +8,19 @@ api:
 
 spring:
   application:
-    name: ms-flota # Nombre para Eureka
+    name: ms-flota
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/flowboxdb}
+    # CAMBIO 1: Default a localhost para pruebas locales
+    # CAMBIO 2: Agregar ?options=-c%20timezone=UTC para evitar el error de zona horaria
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/flowboxdb?options=-c%20timezone=UTC}
     username: ${SPRING_DATASOURCE_USERNAME:flowbox_user}
     password: ${SPRING_DATASOURCE_PASSWORD:flowbox_pass}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-test-query: SELECT 1
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 1
   jpa:
     hibernate:
       ddl-auto: update
@@ -21,19 +28,25 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
 
   security:
     oauth2:
       resourceserver:
         jwt:
+          # Apunta a localhost por defecto para que funcione si corres Keycloak en Docker y el App en Windows
           issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI:http://localhost:8088/realms/tpi-backend}
           
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-# Configuración de Eureka Client
 eureka:
   client:
     serviceUrl:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka}
+  instance:
+    hostname: ms-flota
+
+# Hikari (pool) settings were merged above under spring.datasource

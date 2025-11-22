@@ -1,5 +1,6 @@
 package utn.backend.tpi.tpi_flota_viajes.clients;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import utn.backend.tpi.tpi_flota_viajes.clients.dto.TramoDTO;
@@ -8,9 +9,8 @@ import utn.backend.tpi.tpi_flota_viajes.clients.dto.TramoDTO;
 public class LogisticaApiClient {
     private final RestClient restClient;
 
-    public LogisticaApiClient() {
-         // "ms-logistica" es el nombre del servicio en Docker
-        this.restClient = RestClient.builder().baseUrl("http://ms-logistica:8082").build();
+    public LogisticaApiClient(@Value("${api.logistica.url}") String logisticaBaseUrl) {
+        this.restClient = RestClient.builder().baseUrl(logisticaBaseUrl).build();
     }
 
     /**

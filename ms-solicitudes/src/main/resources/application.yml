@@ -4,6 +4,9 @@ server:
 spring:
     application:
         name: ms-solicitudes # Nombre para Eureka
+    cloud:
+        compatibility-verifier:
+            enabled: false
     datasource:
         url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/flowboxdb}
         username: ${SPRING_DATASOURCE_USERNAME:flowbox_user}

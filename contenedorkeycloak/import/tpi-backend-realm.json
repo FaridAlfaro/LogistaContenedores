@@ -1,0 +1,62 @@
+{
+  "realm": "tpi-backend",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      { "name": "OPERADOR" },
+      { "name": "TRANSPORTISTA" },
+      { "name": "ADMIN" }
+    ]
+  },
+  "clients": [
+  {
+    "clientId": "backend-client",
+    "enabled": true,
+    "directAccessGrantsEnabled": true,
+    "publicClient": true,
+    "protocol": "openid-connect"
+  }
+]
+,
+  "users": [
+    {
+      "username": "operador1",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "operador1",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["OPERADOR"]
+    },
+    {
+      "username": "transportista1",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "transportista1",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["TRANSPORTISTA"]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN"]
+    }
+  ]
+}

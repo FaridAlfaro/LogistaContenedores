@@ -22,8 +22,10 @@ public class SecurityConfig {
                 
                 // Endpoints de FLOTA (Camiones, Transportistas) para ROL OPERADOR
                 .requestMatchers(HttpMethod.POST, "/api/flota/camiones").hasRole("OPERADOR")
-                .requestMatchers(HttpMethod.GET, "/api/flota/camiones/disponibles").hasRole("OPERADOR")
+                .requestMatchers(HttpMethod.GET, "/api/flota/camiones/{id}").hasRole("OPERADOR")
+                .requestMatchers(HttpMethod.POST, "/api/flota/camiones/disponibles").hasRole("OPERADOR")
                 .requestMatchers(HttpMethod.POST, "/api/flota/transportistas").hasRole("OPERADOR")
+                .requestMatchers(HttpMethod.GET, "/api/flota/transportistas/{id}/camiones").hasRole("OPERADOR")
 
                 // Endpoints de VIAJES (Iniciar/Finalizar) para ROL TRANSPORTISTA
                 // (Se validará por @PreAuthorize en el controlador, pero podemos ponerlo aquí también)
@@ -33,7 +35,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             // Usar validación de token JWT (Resource Server)
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt());
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}));
         
         return http.build();
     }

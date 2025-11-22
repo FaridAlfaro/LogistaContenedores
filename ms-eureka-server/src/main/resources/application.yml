@@ -7,3 +7,8 @@ eureka:
     fetch-registry: false
   server:
     wait-time-in-ms-when-sync-empty: 0 # Para desarrollo
+
+spring:
+  cloud:
+    compatibility-verifier:
+      enabled: false
