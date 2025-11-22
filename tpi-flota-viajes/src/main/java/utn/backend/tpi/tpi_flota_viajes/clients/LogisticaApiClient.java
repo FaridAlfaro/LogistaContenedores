@@ -34,4 +34,11 @@ public class LogisticaApiClient {
                 .retrieve()
                 .body(TramoDTO.class);
     }
+
+    public void asignarCamion(Long idTramo, String dominio) {
+        restClient.post()
+                .uri("/api/v1/tramos/{id}/asignar?dominio={dominio}", idTramo, dominio)
+                .retrieve()
+                .toBodilessEntity();
+    }
 }

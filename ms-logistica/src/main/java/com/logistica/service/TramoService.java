@@ -14,6 +14,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -52,8 +53,7 @@ public class TramoService {
                 idTramo,
                 ruta.getNroSolicitudRef(),
                 LocalDateTime.now(),
-                "INICIADO"
-        );
+                "INICIADO");
 
         rabbitTemplate.convertAndSend("solicitudes.exchange", "tramo.iniciado", evento);
         log.info("Evento TramoIniciado publicado para solicitud: {}", ruta.getNroSolicitudRef());
@@ -98,8 +98,7 @@ public class TramoService {
                 costoReal,
                 tiempoReal,
                 LocalDateTime.now(),
-                "FINALIZADO"
-        );
+                "FINALIZADO");
 
         rabbitTemplate.convertAndSend("solicitudes.exchange", "tramo.finalizado", evento);
         log.info("Evento TramoFinalizado publicado para solicitud: {}", ruta.getNroSolicitudRef());
@@ -129,7 +128,21 @@ public class TramoService {
 
         return java.time.temporal.ChronoUnit.SECONDS.between(
                 tramo.getFechaHoraInicio(),
-                tramo.getFechaHoraFin()
-        );
+                tramo.getFechaHoraFin());
+    }
+
+    @Transactional
+    public void asignarCamion(Long idTramo, String dominio) {
+        Tramo tramo = tramoRepository.findById(idTramo)
+                .orElseThrow(() -> new TramoNotFoundException(idTramo));
+
+        tramo.setDominioCamionRef(dominio);
+        tramo.setEstado(EstadoTramo.ASIGNADO);
+        tramoRepository.save(tramo);
+    }
+
+    public List<Tramo> obtenerTramosPendientes() {
+        // Retorna tramos que están ASIGNADO, INICIADO o ESTIMADO (no FINALIZADO)
+        return tramoRepository.findByEstadoNot(EstadoTramo.FINALIZADO);
     }
 }

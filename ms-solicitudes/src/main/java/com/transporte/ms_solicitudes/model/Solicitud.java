@@ -1,15 +1,19 @@
 package com.transporte.ms_solicitudes.model;
+
 import lombok.*;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "solicitudes")
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Solicitud {
     @Id
     private String nroSolicitud;
-    
-    @Enumerated(EnumType.ORDINAL)
+
+    @Enumerated(EnumType.STRING)
     private EstadoSolicitud estado;
     private Double costoEstimado;
     private Integer tiempoEstimado;

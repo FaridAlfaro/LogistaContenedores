@@ -10,6 +10,7 @@ import java.util.List;
 
 @Repository
 public interface TramoRepository extends JpaRepository<Tramo, Long> {
+
     List<Tramo> findByRutaId(Long rutaId);
 
     List<Tramo> findByEstado(EstadoTramo estado);
@@ -18,4 +19,6 @@ public interface TramoRepository extends JpaRepository<Tramo, Long> {
 
     @Query("SELECT t FROM Tramo t WHERE t.ruta.nroSolicitudRef = :nroSolicitud")
     List<Tramo> findByNroSolicitud(@Param("nroSolicitud") String nroSolicitud);
+
+    List<Tramo> findByEstadoNot(EstadoTramo estado);
 }

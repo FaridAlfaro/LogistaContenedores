@@ -57,4 +57,4 @@ env/
 .venv/
 
 # Directorio raíz de datos (no versionear)
-data/
+/data/

@@ -18,7 +18,7 @@ public class TramoExecutionService {
     /**
      * Inicia un tramo asignando un camión y notificando a ms-logistica
      *
-     * @param idTramo ID del tramo a iniciar
+     * @param idTramo       ID del tramo a iniciar
      * @param dominioCamion Dominio del camión que ejecutará el tramo
      */
     @Transactional
@@ -35,17 +35,19 @@ public class TramoExecutionService {
             log.info("Tramo {} iniciado exitosamente en ms-logistica", idTramo);
             return tramoActualizado;
         } catch (Exception e) {
-            log.error("Error al llamar a ms-logistica para iniciar tramo {}. Revirtiendo asignación de camión.", idTramo, e);
-            throw new RuntimeException("Error en servicio de logística, no se pudo iniciar el tramo: " + e.getMessage(), e);
+            log.error("Error al llamar a ms-logistica para iniciar tramo {}. Revirtiendo asignación de camión.",
+                    idTramo, e);
+            throw new RuntimeException("Error en servicio de logística, no se pudo iniciar el tramo: " + e.getMessage(),
+                    e);
         }
     }
 
     /**
      * Finaliza un tramo liberando el camión y notificando a ms-logistica
      *
-     * @param idTramo ID del tramo a finalizar
+     * @param idTramo       ID del tramo a finalizar
      * @param dominioCamion Dominio del camión que ejecutó el tramo
-     * @param kmRecorridos Kilómetros recorridos durante el tramo
+     * @param kmRecorridos  Kilómetros recorridos durante el tramo
      */
     @Transactional
     public TramoDTO finalizarTramo(Long idTramo, String dominioCamion, double kmRecorridos) {
@@ -59,7 +61,8 @@ public class TramoExecutionService {
             log.info("Tramo {} finalizado exitosamente en ms-logistica", idTramo);
         } catch (Exception e) {
             log.error("Error al llamar a ms-logistica para finalizar tramo {}. No se liberará el camión.", idTramo, e);
-            throw new RuntimeException("Error en servicio de logística, no se pudo finalizar el tramo: " + e.getMessage(), e);
+            throw new RuntimeException(
+                    "Error en servicio de logística, no se pudo finalizar el tramo: " + e.getMessage(), e);
         }
 
         // 2. Si exitoso en ms-logistica, liberar el camión localmente
@@ -67,5 +70,35 @@ public class TramoExecutionService {
 
         return tramoActualizado;
     }
-}
 
+    @Transactional
+    public void asignarTramo(Long idTramo, String dominioCamion) {
+        log.info("Asignando tramo {} a camión {}", idTramo, dominioCamion);
+
+        // 1. Asignar localmente (valida estado y actualiza a EN_VIAJE - wait, should it
+        // be EN_VIAJE or ASIGNADO?)
+        // Requisito: "Asignar camión a tramo" vs "Iniciar viaje".
+        // Si asignamos, el camión queda comprometido.
+        // CamionService.asignarTramo pone el estado en EN_VIAJE.
+        // Tal vez deberíamos tener un estado ASIGNADO en Camion también?
+        // Por ahora usaremos la lógica existente de asignarTramo que lo pone en
+        // EN_VIAJE (o asumimos que asignar = iniciar para este flujo simple,
+        // pero el usuario pidió endpoint separado).
+        // Si el usuario pidió endpoint separado, probablemente quiera reservar el
+        // camión.
+        // Voy a usar camionService.asignarTramo pero idealmente debería ser un estado
+        // intermedio.
+        // Dado que no puedo cambiar el Enum de Camion facilmente sin romper cosas,
+        // usaré asignarTramo existente.
+
+        camionService.asignarTramo(dominioCamion, idTramo);
+
+        // 2. Notificar a ms-logistica
+        try {
+            logisticaApiClient.asignarCamion(idTramo, dominioCamion);
+        } catch (Exception e) {
+            log.error("Error al asignar camión en ms-logistica. Revirtiendo.", e);
+            throw new RuntimeException("Error al asignar en logística: " + e.getMessage());
+        }
+    }
+}

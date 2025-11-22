@@ -38,8 +38,8 @@ public class LogisticaController {
         try {
             List<Deposito> depositos = request.getIdDepositos() != null && !request.getIdDepositos().isEmpty()
                     ? request.getIdDepositos().stream()
-                    .map(depositoService::obtenerDeposito)
-                    .toList()
+                            .map(depositoService::obtenerDeposito)
+                            .toList()
                     : List.of();
 
             Tarifa tarifa = tarifaService.obtenerTarifa(request.getIdTarifa());
@@ -51,8 +51,7 @@ public class LogisticaController {
                     request.getLonOrigen(),
                     request.getLatDestino(),
                     request.getLonDestino(),
-                    tarifa
-            );
+                    tarifa);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
@@ -77,21 +76,19 @@ public class LogisticaController {
 
             List<Deposito> depositos = idDepositos != null && !idDepositos.isEmpty()
                     ? idDepositos.stream()
-                    .map(depositoService::obtenerDeposito)
-                    .toList()
+                            .map(depositoService::obtenerDeposito)
+                            .toList()
                     : List.of();
 
             DistanciaResponse distanciaResponse = rutaService.calcularDistancia(
-                    latOrigen, lonOrigen, latDestino, lonDestino, depositos
-            );
+                    latOrigen, lonOrigen, latDestino, lonDestino, depositos);
 
             double costoEstimado = distanciaResponse.getDistanciaKm() * tarifa.getValorKMBase();
 
             CalculoResponse response = new CalculoResponse(
                     distanciaResponse.getDistanciaKm(),
                     distanciaResponse.getTiempoSegundos(),
-                    costoEstimado
-            );
+                    costoEstimado);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -139,9 +136,29 @@ public class LogisticaController {
      */
     @PutMapping("/tramos/{id}/finalizar")
     public ResponseEntity<Void> finalizarTramo(@PathVariable Long id,
-                                               @RequestParam double kmRecorridos) {
+            @RequestParam double kmRecorridos) {
         log.info("Tramo {} finalizado con {} km (notificación de MS Flota)", id, kmRecorridos);
         tramoService.marcarTramoFinalizado(id, kmRecorridos);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Asigna un camión a un tramo (llamado por MS Flota o Operador)
+     * POST /api/v1/tramos/{id}/asignar
+     */
+    @PostMapping("/tramos/{id}/asignar")
+    public ResponseEntity<Void> asignarCamion(@PathVariable Long id, @RequestParam String dominio) {
+        log.info("Asignando camión {} al tramo {}", dominio, id);
+        tramoService.asignarCamion(id, dominio);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Consulta contenedores pendientes de entrega y su ubicación
+     * GET /api/v1/contenedores/pendientes
+     */
+    @GetMapping("/contenedores/pendientes")
+    public ResponseEntity<List<Tramo>> obtenerContenedoresPendientes() {
+        return ResponseEntity.ok(tramoService.obtenerTramosPendientes());
     }
 }

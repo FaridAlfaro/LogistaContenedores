@@ -42,14 +42,16 @@ public class FlotaController {
 
     @PostMapping("/camiones/disponibles")
     @PreAuthorize("hasRole('OPERADOR')")
-    public ResponseEntity<ListaCamionesDisponiblesResponse> getCamionesDisponibles(@RequestBody ObtenerDisponiblesRequest request) {
+    public ResponseEntity<ListaCamionesDisponiblesResponse> getCamionesDisponibles(
+            @RequestBody ObtenerDisponiblesRequest request) {
         ListaCamionesDisponiblesResponse response = camionService.getCamionesDisponibles(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/transportistas")
     @PreAuthorize("hasRole('OPERADOR')")
-    public ResponseEntity<TransportistaResponse> addTransportista(@RequestBody CrearTransportistaRequest crearTransportistaRequest) {
+    public ResponseEntity<TransportistaResponse> addTransportista(
+            @RequestBody CrearTransportistaRequest crearTransportistaRequest) {
         TransportistaResponse response = transportistaService.crear(crearTransportistaRequest);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -59,7 +61,6 @@ public class FlotaController {
     public ResponseEntity<List<CamionResponse>> getCamionesPorTransportista(@PathVariable Long id) {
         return ResponseEntity.ok(camionService.obtenerPorTransportista(id));
     }
-
 
     // --- Endpoints de VIAJES (TRANSPORTISTA) ---
 
@@ -72,8 +73,17 @@ public class FlotaController {
 
     @PostMapping("/tramos/{idTramo}/finalizar")
     @PreAuthorize("hasRole('TRANSPORTISTA')")
-    public ResponseEntity<TramoDTO> finalizarTramo(@PathVariable Long idTramo, @RequestBody FinalizarTramoRequest request) {
-        TramoDTO tramoActualizado = tramoExecutionService.finalizarTramo(idTramo, request.getDominioCamion(), request.getKmRecorridos());
+    public ResponseEntity<TramoDTO> finalizarTramo(@PathVariable Long idTramo,
+            @RequestBody FinalizarTramoRequest request) {
+        TramoDTO tramoActualizado = tramoExecutionService.finalizarTramo(idTramo, request.getDominioCamion(),
+                request.getKmRecorridos());
         return ResponseEntity.ok(tramoActualizado);
+    }
+
+    @PostMapping("/tramos/{idTramo}/asignar")
+    @PreAuthorize("hasRole('OPERADOR')")
+    public ResponseEntity<Void> asignarTramo(@PathVariable Long idTramo, @RequestParam String dominio) {
+        tramoExecutionService.asignarTramo(idTramo, dominio);
+        return ResponseEntity.ok().build();
     }
 }
