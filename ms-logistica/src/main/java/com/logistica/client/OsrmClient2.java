@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OsrmClient2 {
     private final RestClient restClient;
 
+    @SuppressWarnings("null")
     public OsrmClient2() {
         // OSRM local o remoto
         this.restClient = RestClient.builder().baseUrl("http://osrm:5000").build();

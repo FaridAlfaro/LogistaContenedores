@@ -4,11 +4,14 @@ server:
 # URL del microservicio de logística
 api:
   logistica:
-    url: ${API_LOGISTICA_URL:http://localhost:8082}
+    url: ${API_LOGISTICA_URL:http://ms-logistica:8080}
 
 spring:
   application:
     name: ms-flota
+  cloud:
+    compatibility-verifier:
+      enabled: false
   datasource:
     # CAMBIO 1: Default a localhost para pruebas locales
     # CAMBIO 2: Agregar ?options=-c%20timezone=UTC para evitar el error de zona horaria

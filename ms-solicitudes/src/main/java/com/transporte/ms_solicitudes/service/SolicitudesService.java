@@ -24,21 +24,25 @@ public class SolicitudesService {
     private final ContenedorRepository contenedorRepository;
 
     @Transactional
-    public Solicitud crearSolicitud(String idCliente, String idContenedor, Double destinoLat, Double destinoLon) {
-        // 1. Registrar/Buscar Cliente
-        // Asumimos que si no existe, lo creamos con datos dummy o solo el ID por ahora
+    public Solicitud crearSolicitud(String idCliente, String idContenedor,
+            Double origenLat, Double origenLon, // <--- Agregar parámetros
+            Double destinoLat, Double destinoLon) {
+        if (idCliente == null || idContenedor == null) {
+            throw new IllegalArgumentException("Client ID and Container ID cannot be null");
+        }
+
+        // 1. Registrar/Buscar Cliente (código existente...)
         Cliente cliente = clienteRepository.findById(idCliente)
                 .orElseGet(() -> clienteRepository.save(Cliente.builder()
                         .idCliente(idCliente)
-                        .nombre("Cliente " + idCliente) // Placeholder
+                        .nombre("Cliente " + idCliente)
                         .build()));
 
-        // 2. Registrar Contenedor
-        // La solicitud incluye la creación del contenedor
+        // 2. Registrar Contenedor (código existente...)
         Contenedor contenedor = contenedorRepository.findById(idContenedor)
                 .orElseGet(() -> contenedorRepository.save(Contenedor.builder()
                         .idContenedor(idContenedor)
-                        .peso(0.0) // Se actualizará después o debería venir en el request
+                        .peso(0.0)
                         .volumen(0.0)
                         .build()));
 
@@ -49,6 +53,8 @@ public class SolicitudesService {
                 .estado(EstadoSolicitud.BORRADOR)
                 .idCliente(cliente.getIdCliente())
                 .idContenedor(contenedor.getIdContenedor())
+                .origenLatitud(origenLat) // <--- Mapear Origen
+                .origenLongitud(origenLon) // <--- Mapear Origen
                 .destinoLatitud(destinoLat)
                 .destinoLongitud(destinoLon)
                 .build();
@@ -67,7 +73,7 @@ public class SolicitudesService {
     @Transactional
     public Optional<Solicitud> aceptarSolicitud(String nro) {
         return solicitudRepository.findById(nro).map(s -> {
-            s.setEstado(EstadoSolicitud.PROGRAMADA); // Cambio de estado a PROGRAMADA (antes ACEPTADA)
+            s.setEstado(EstadoSolicitud.ACEPTADA); // Cambio de estado a ACEPTADA (antes PROGRAMADA)
             return solicitudRepository.save(s);
         });
     }

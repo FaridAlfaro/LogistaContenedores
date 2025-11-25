@@ -1,4 +1,3 @@
-/*
 package com.logistica.api;
 
 import org.springframework.http.ResponseEntity;
@@ -7,17 +6,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.logistica.model.EstadoTramo;
+import org.springframework.web.bind.annotation.*;
 import com.logistica.model.Tramo;
 import com.logistica.repository.TramoRepository;
-
 import lombok.RequiredArgsConstructor;
+import com.logistica.model.EstadoTramo;
 
 @RestController
 @RequestMapping("/api/v1/tramos")
 @RequiredArgsConstructor
 public class TramosController {
+
     private final TramoRepository tramoRepository;
     // Este servicio será llamado por ms-flota-viajes
 
@@ -42,4 +41,3 @@ public class TramosController {
         return ResponseEntity.ok(tramoRepository.save(tramo));
     }
 }
-*/

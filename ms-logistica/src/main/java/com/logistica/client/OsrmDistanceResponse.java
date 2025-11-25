@@ -18,10 +18,17 @@ public class OsrmDistanceResponse {
     }
 
     public double getDistanceKm() {
+        if (routes == null || routes.length == 0) {
+            return 0.0; // O lanzar una excepción personalizada controlada
+        }
         return routes[0].distance / 1000.0;
     }
 
     public double getDurationSeconds() {
+        if (routes == null || routes.length == 0) {
+            return 0.0;
+        }
         return routes[0].duration;
     }
+
 }

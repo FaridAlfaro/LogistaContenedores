@@ -32,7 +32,7 @@ public class TramoService {
      */
     @Transactional
     public void marcarTramoIniciado(Long idTramo) {
-        log.info("Marcando tramo {} como INICIADO", idTramo);
+        log.info("Marcando tramo {} como EN CURSO", idTramo);
 
         Tramo tramo = tramoRepository.findById(idTramo)
                 .orElseThrow(() -> new TramoNotFoundException(idTramo));
@@ -42,11 +42,11 @@ public class TramoService {
             throw new RutaNotFoundException(null);
         }
 
-        tramo.setEstado(EstadoTramo.INICIADO);
+        tramo.setEstado(EstadoTramo.EN_CURSO);
         tramo.setFechaHoraInicio(LocalDateTime.now());
         tramoRepository.save(tramo);
 
-        log.info("Tramo {} ahora está INICIADO, publicando evento", idTramo);
+        log.info("Tramo {} ahora está EN CURSO, publicando evento", idTramo);
 
         // Publica evento a RabbitMQ para MS Solicitudes
         TramoIniciado evento = new TramoIniciado(

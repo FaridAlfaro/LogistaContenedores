@@ -8,7 +8,7 @@ RUN mvn dependency:go-offline
 
 # Copiar código fuente y construir
 COPY src ./src
-RUN mvn package -DskipTests
+RUN mvn package -Dmaven.test.skip=true
 
 # Etapa 2: Ejecución (Runtime)
 FROM eclipse-temurin:21-jre-jammy

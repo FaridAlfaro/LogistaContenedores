@@ -9,7 +9,7 @@ RUN mvn dependency:go-offline
 
 # Copiar el resto del código fuente y construir
 COPY src ./src
-RUN mvn package -DskipTests
+RUN mvn package -Dmaven.test.skip=true
 
 # Etapa 2: Ejecución (Runtime)
 # Usamos una imagen ligera de JRE 21 de Eclipse Temurin (¡ESTA ES LA CORRECCIÓN!)

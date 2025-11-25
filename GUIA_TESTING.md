@@ -72,22 +72,22 @@ docker-compose ps
 
 ```bash
 # Token para OPERADOR (confidential client `backend-client`)
-curl -X POST http://localhost:8081/realms/tpi-backend/protocol/openid-connect/token \
+curl -X POST http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=password" \
   -d "client_id=backend-client" \
   -d "client_secret=backend-secret" \
-  -d "username=operador1" \
-  -d "password=operador1"
+  -d "username=operador" \
+  -d "password=operador"
 
 # Token para TRANSPORTISTA (confidential client `backend-client`)
-curl -X POST http://localhost:8081/realms/tpi-backend/protocol/openid-connect/token \
+curl -X POST http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=password" \
   -d "client_id=backend-client" \
   -d "client_secret=backend-secret" \
-  -d "username=transportista1" \
-  -d "password=transportista1"
+  -d "username=transportista" \
+  -d "password=transportista"
 ```
 
 Nota: si en tu entorno Keycloak está mapeado al puerto `8088` (como indica la guía), reemplaza `8081` por `8088` en las URLs anteriores.

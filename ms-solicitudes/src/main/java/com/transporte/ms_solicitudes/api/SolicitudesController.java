@@ -16,10 +16,18 @@ public class SolicitudesController {
 
     @PostMapping
     public ResponseEntity<SolicitudResponseDTO> crear(@RequestBody SolicitudRequestDTO req) {
+        if (req == null) {
+            throw new IllegalArgumentException("El cuerpo de la solicitud no puede ser null");
+        }
+        if (req.destino() == null || req.origen() == null) { // <--- Validar origen
+            throw new IllegalArgumentException("Origen y Destino no pueden ser null");
+        }
 
         Solicitud nueva = service.crearSolicitud(
                 req.idCliente(),
                 req.idContenedor(),
+                req.origen().lat(), // <--- Pasar latitud origen
+                req.origen().lon(), // <--- Pasar longitud origen
                 req.destino().lat(),
                 req.destino().lon());
 

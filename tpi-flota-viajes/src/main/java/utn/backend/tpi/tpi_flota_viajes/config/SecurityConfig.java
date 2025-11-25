@@ -35,7 +35,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             // Usar validación de token JWT (Resource Server)
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}));
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt());
         
         return http.build();
     }

@@ -35,10 +35,9 @@ public class TramoExecutionService {
             log.info("Tramo {} iniciado exitosamente en ms-logistica", idTramo);
             return tramoActualizado;
         } catch (Exception e) {
-            log.error("Error al llamar a ms-logistica para iniciar tramo {}. Revirtiendo asignación de camión.",
-                    idTramo, e);
-            throw new RuntimeException("Error en servicio de logística, no se pudo iniciar el tramo: " + e.getMessage(),
-                    e);
+            log.error("Error al llamar a ms-logistica...", idTramo, e);
+            // Esto es lo que causa el 500 genérico
+            throw new RuntimeException("Error en servicio de logística...", e);
         }
     }
 
@@ -60,9 +59,9 @@ public class TramoExecutionService {
             tramoActualizado = logisticaApiClient.finalizarTramo(idTramo, kmRecorridos);
             log.info("Tramo {} finalizado exitosamente en ms-logistica", idTramo);
         } catch (Exception e) {
-            log.error("Error al llamar a ms-logistica para finalizar tramo {}. No se liberará el camión.", idTramo, e);
-            throw new RuntimeException(
-                    "Error en servicio de logística, no se pudo finalizar el tramo: " + e.getMessage(), e);
+            log.error("Error al llamar a ms-logistica...", idTramo, e);
+            // Esto es lo que causa el 500 genérico
+            throw new RuntimeException("Error en servicio de logística...", e);
         }
 
         // 2. Si exitoso en ms-logistica, liberar el camión localmente
@@ -97,8 +96,9 @@ public class TramoExecutionService {
         try {
             logisticaApiClient.asignarCamion(idTramo, dominioCamion);
         } catch (Exception e) {
-            log.error("Error al asignar camión en ms-logistica. Revirtiendo.", e);
-            throw new RuntimeException("Error al asignar en logística: " + e.getMessage());
+            log.error("Error al llamar a ms-logistica...", idTramo, e);
+            // Esto es lo que causa el 500 genérico
+            throw new RuntimeException("Error en servicio de logística...", e);
         }
     }
 }

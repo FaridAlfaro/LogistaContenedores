@@ -10,6 +10,11 @@
       KEYCLOAK_ADMIN_PASSWORD: admin123
       # Import will be triggered at startup from the path below
       KEYCLOAK_IMPORT: "/opt/keycloak/data/import/tpi-backend-realm.json"
+      # Ensure Keycloak issues tokens with the internal container hostname
+      KC_HOSTNAME: keycloak
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT: 'false'
+      PROXY_ADDRESS_FORWARDING: 'true'
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./import:/opt/keycloak/data/import:ro

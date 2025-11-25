@@ -22,6 +22,12 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin123
       KEYCLOAK_IMPORT: "/opt/keycloak/data/import/tpi-backend-realm.json"
+      # Make Keycloak issue tokens using the container hostname so services
+      # that validate the token with issuer http://keycloak:8080 will accept it.
+      KC_HOSTNAME: keycloak
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT: 'false'
+      PROXY_ADDRESS_FORWARDING: 'true'
       KC_DB_URL_HOST: postgres
       KC_DB_URL_DATABASE: flowboxdb
       KC_DB_USERNAME: flowbox_user
@@ -31,7 +37,7 @@ services:
       - ./contenedorkeycloak/import:/opt/keycloak/data/import:ro
       - keycloak_data:/opt/keycloak/data
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8088/" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/" ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -40,7 +46,6 @@ services:
 
   osrm:
     image: ghcr.io/project-osrm/osrm-backend:latest
-    platform: linux/arm64
     container_name: osrm
     ports:
       - "5000:5000"

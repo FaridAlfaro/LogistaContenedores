@@ -1,29 +1,51 @@
 ### LogistaContenedores - API Gateway Test
-### Base URL: http://localhost:8085 (Gateway) o http://localhost:8082/8083 (directo)
+### Base URL: http://localhost:9090 (Gateway) o http://localhost:8082/8083 (directo)
 ### Documentación: Consultar GUIA_TESTING.md
+### Keycloak: http://localhost:8088
 
-@baseUrl = http://localhost:8085
+###
+### PASO 0: OBTENER TOKENS (Copia y ejecuta el comando correspondiente a tu shell)
+###
+
+### Para POWERSHELL (Windows):
+### $tokenOp = (Invoke-RestMethod -Method Post -Uri 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' -ContentType 'application/x-www-form-urlencoded' -Body 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=operador&password=operador').access_token; Write-Host $tokenOp
+
+### Para BASH/Git Bash:
+### TOKEN_OP=$(curl -s -X POST 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' -H 'Content-Type: application/x-www-form-urlencoded' -d 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=operador&password=operador' | jq -r '.access_token'); echo $TOKEN_OP
+
+### VARIABLES DE ENTORNO - Actualizar con tokens obtenidos de Keycloak
+@baseUrl = http://localhost:8080
 @baseUrlLogistica = http://localhost:8082
 @baseUrlFlota = http://localhost:8083
-@token_cliente = YOUR_CLIENTE_TOKEN_HERE
-@token_operador = YOUR_OPERADOR_TOKEN_HERE
-@token_transportista = YOUR_TRANSPORTISTA_TOKEN_HERE
-@nro_solicitud =
+
+# Para obtener tokens, ejecuta estos comandos en PowerShell o bash:
+# Operador:
+# $token_op=$(curl -s -X POST 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' -H 'Content-Type: application/x-www-form-urlencoded' -d 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=operador&password=operador' | jq -r '.access_token')
+#
+# Transportista:
+# $token_trans=$(curl -s -X POST 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' -H 'Content-Type: application/x-www-form-urlencoded' -d 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=transportista&password=transportista' | jq -r '.access_token')
+
+# Tokens (actualiza estos valores con los tokens reales obtenidos):
+
+@token_operador = eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJXU2QwdWZySjlCSnFud2I3QldEMHVob3Bpazlrbi0yRTJISnZiRC02dU9FIn0.eyJleHAiOjE3NjQxNDQ3MzMsImlhdCI6MTc2NDEwODczMywianRpIjoiYmEyNWEyNTAtNzc5Ni00ZWQ5LThiZGYtZDIwNDc5OTU1OTRmIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDg4L3JlYWxtcy90cGktYmFja2VuZCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJlODBhNDY5ZS0yNjc5LTQyYzItODVmYS0xZGFkYTI1ZWU1ZmIiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJiYWNrZW5kLWNsaWVudCIsInNlc3Npb25fc3RhdGUiOiIwM2QwOGRiNS0yZjM0LTRkMGMtYmU0ZS1lNzhiZDYwNWUwZTYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsImh0dHA6Ly9sb2NhbGhvc3Q6NTE3MyJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsIk9QRVJBRE9SIiwiZGVmYXVsdC1yb2xlcy10cGktYmFja2VuZCJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsInNpZCI6IjAzZDA4ZGI1LTJmMzQtNGQwYy1iZTRlLWU3OGJkNjA1ZTBlNiIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwibmFtZSI6Im9wZXJhZG9yIDEiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJvcGVyYWRvciIsImdpdmVuX25hbWUiOiJvcGVyYWRvciIsImZhbWlseV9uYW1lIjoiMSIsImVtYWlsIjoib3BlcmFkb3JAZXhhbXBsZS5jb20ifQ.VyG62h6HUpfJKlo-iRJhRX1iuYFmezIDtYsflsflGG1pAi9eXe2pEmuU24U-UopTburOSnqbxpT6d0HRCUyt5WbkKIxOXXOseM-OyzDa-zdb7fZo1u80hdEEBDuBevRnbXihj2hROY68mEkhb01YpoEREAlhefl3_qvoFfMKKdhlvEPHkgwktQ97yjIG3SqJEOaSkxYFOfcFbU5nu4X6oPJ0lj1QZCPxHxyvmERwIGvrIf-wAWymzNECGz6tw0moU38Ve2c9PBKkap1d3ldgtr-Yg0avKRFIcypanVfuyUn7n_lKaFSRuWGzNNEmLcabg-i8mchYuBpAQ6hoTtU5UA
+@token_transportista = eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJXU2QwdWZySjlCSnFud2I3QldEMHVob3Bpazlrbi0yRTJISnZiRC02dU9FIn0.eyJleHAiOjE3NjQxNDQ2NzUsImlhdCI6MTc2NDEwODY3NSwianRpIjoiNzgyM2IxODgtOGUxOS00MDAwLWEzNDYtOWZlOGM3ODAwN2M4IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDg4L3JlYWxtcy90cGktYmFja2VuZCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiI0MTg4ZjFmNC1kNDZlLTQ0MTMtODc4Zi1kM2NjOWJkNzFlZjkiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJiYWNrZW5kLWNsaWVudCIsInNlc3Npb25fc3RhdGUiOiJhYTQ5NmE1Zi01ZDA2LTRjNTUtOTQxZS1iOWUxNTE5ZTFjNDQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsImh0dHA6Ly9sb2NhbGhvc3Q6NTE3MyJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiVFJBTlNQT1JUSVNUQSIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJkZWZhdWx0LXJvbGVzLXRwaS1iYWNrZW5kIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJlbWFpbCBwcm9maWxlIiwic2lkIjoiYWE0OTZhNWYtNWQwNi00YzU1LTk0MWUtYjllMTUxOWUxYzQ0IiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJuYW1lIjoidHJhbnNwb3J0aXN0YSAxIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidHJhbnNwb3J0aXN0YSIsImdpdmVuX25hbWUiOiJ0cmFuc3BvcnRpc3RhIiwiZmFtaWx5X25hbWUiOiIxIiwiZW1haWwiOiJ0cmFuc3BvcnRpc3RhQGV4YW1wbGUuY29tIn0.kbZTO5zlH5SfDuTHcSihFZa-HcFmDiErlbugqMC5GUbBtaNq2R50vLgB6eOa9mZRO77I0gpZJJZ3lfb44hwygCzZvdT9HkM7zzye0DFLBn-yeQzpmYMnMxr2dQ8vWFc70hZQfFza3Rp6SjDArqNvvSE3wafrFO2GnZGu700_eJjJS0Ul2nPqyp_z_tKJs7zM7I2f_mmx1FsGrmGsdDuSW2hvbcumWk_--jEzpa6_7R_cMoXKxz2EhLyB00wyapGv_ii3SWkXNivqhUFG7CUsCERYKFdkBlDQP93J3x60v9C8Qbm_BZPgz9RkYMOqxSfIzPUIt2tQbyXhL6oimF2usQ
+# IDs de recursos (actualiza según tus creaciones):
+@nro_solicitud = SOL-2024-001
 @idTramo = 1
 @idCamion = 1
 @idTransportista = 1
 @idDeposito = 1
-@idTarifa = 1 
+@idTarifa = 1
 
 ### ========================================
 ### SOLICITUDES (ms-solicitudes)
 ### ========================================
 
-### 1. Crear nueva solicitud (Rol: CLIENTE)
+### 1. Crear nueva solicitud (Rol: OPERADOR)
 # Este endpoint crea una nueva solicitud y devuelve un número de solicitud único
 # La solicitud se crea en estado BORRADOR
 POST {{baseUrl}}/api/v1/solicitudes
-Authorization: Bearer {{token_cliente}}
+Authorization: Bearer {{token_operador}}
 Content-Type: application/json
 
 {
@@ -42,11 +64,11 @@ Content-Type: application/json
 }
 
 ###
-### 2. Obtener solicitud por número (Rol: CLIENTE)
+### 2. Obtener solicitud por número (Rol: OPERADOR)
 # Obtiene los detalles de una solicitud específica usando su número (nro)
 # Reemplaza "{{nro_solicitud}}" con el número devuelto por la creación
 GET {{baseUrl}}/api/v1/solicitudes/{{nro_solicitud}}
-Authorization: Bearer {{token_cliente}}
+Authorization: Bearer {{token_operador}}
 
 ###
 ### 3. Listar solicitudes pendientes (Rol: OPERADOR)
@@ -213,61 +235,63 @@ Content-Type: application/json
 ### INSTRUCCIONES DE USO
 ### ========================================
 
-# 1. Obtener tokens de Keycloak:
-#    POST http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token
-#    Body (form-data):
-#      - grant_type: password
-#      - client_id: <your-client-id>
-#      - username: <usuario>
-#      - password: <password>
+# 1. PASO 1: Obtener tokens desde Keycloak
 #
-#    Respuesta incluye "access_token" que colocas en las variables correspondientes
+#    Opción A: PowerShell (desde el repo root):
+#    $tokenOp = (Invoke-RestMethod -Method Post -Uri 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' -ContentType 'application/x-www-form-urlencoded' -Body 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=operador&password=operador').access_token
+#    $tokenTrans = (Invoke-RestMethod -Method Post -Uri 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' -ContentType 'application/x-www-form-urlencoded' -Body 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=transportista&password=transportista').access_token
+#    Write-Host "Operador: $tokenOp"
+#    Write-Host "Transportista: $tokenTrans"
 #
-#    Ejemplo con cURL:
-#    curl -X POST http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token \
-#      -H "Content-Type: application/x-www-form-urlencoded" \
-#      -d "grant_type=password" \
-#      -d "client_id=<client-id>" \
-#      -d "username=<usuario>" \
-#      -d "password=<password>"
-
-# 2. Flujo de prueba completo recomendado:
-#    
-#    A) MS LOGÍSTICA:
-#       a) Crear depósito (endpoint 1)
-#       b) Crear tarifa (endpoint 2)
-#       c) Calcular ruta (endpoint 3 o 4)
-#       d) Planificar ruta (endpoint 5) - esto crea tramos
+#    Opción B: cURL (desde bash o Git Bash):
+#    TOKEN_OP=$(curl -s -X POST 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' \
+#      -H 'Content-Type: application/x-www-form-urlencoded' \
+#      -d 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=operador&password=operador' | jq -r '.access_token')
+#    TOKEN_TRANS=$(curl -s -X POST 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' \
+#      -H 'Content-Type: application/x-www-form-urlencoded' \
+#      -d 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=transportista&password=transportista' | jq -r '.access_token')
+#    echo "Operador: $TOKEN_OP"
+#    echo "Transportista: $TOKEN_TRANS"
 #
-#    B) MS FLOTA:
-#       a) Crear transportista (endpoint 1) - requiere token OPERADOR
-#       b) Crear camión (endpoint 2) - requiere token OPERADOR
-#       c) Obtener camiones disponibles (endpoint 4) - requiere token OPERADOR
-#       d) Iniciar tramo (endpoint 6) - requiere token TRANSPORTISTA
-#       e) Finalizar tramo (endpoint 7) - requiere token TRANSPORTISTA
-
-# 3. Variables de entorno:
-#    - {{baseUrl}}: URL base del API Gateway (por defecto 8085)
-#    - {{baseUrlLogistica}}: URL directa MS Logística (8082)
-#    - {{baseUrlFlota}}: URL directa MS Flota (8083)
-#    - {{token_cliente}}: Token JWT con rol CLIENTE
-#    - {{token_operador}}: Token JWT con rol OPERADOR
-#    - {{token_transportista}}: Token JWT con rol TRANSPORTISTA
-#    - {{nro_solicitud}}: Número de la solicitud a manipular
-#    - {{idTramo}}: ID del tramo (obtenido al planificar ruta)
-#    - {{idCamion}}: ID del camión
-#    - {{idTransportista}}: ID del transportista
-#    - {{idDeposito}}: ID del depósito
-#    - {{idTarifa}}: ID de la tarifa
-
-# 4. Extensiones recomendadas para VS Code:
-#    - REST Client (humao.rest-client) - Permite ejecutar estos archivos .http directamente
-#    - Thunder Client
-#    - Hoppscotch (en línea)
-
-# 5. Swagger UI:
+# 2. PASO 2: Reemplaza los valores de @token_operador y @token_transportista en la sección de variables (líneas 14-15)
+#    con los tokens obtenidos.
+#
+# 3. PASO 3: Usar REST Client en VS Code
+#    - Instala la extensión "REST Client" (humao.rest-client)
+#    - Abre este archivo (test-endpoints.http)
+#    - Haz clic en "Send Request" sobre cada endpoint para ejecutar
+#
+# 4. FLUJO DE PRUEBA COMPLETO RECOMENDADO:
+#
+#    A) MS LOGÍSTICA (Rol: OPERADOR):
+#       1. Crear depósito (POST /api/v1/depositos)
+#       2. Crear tarifa (POST /api/v1/tarifas)
+#       3. Calcular ruta (GET /api/v1/rutas/calcular)
+#       4. Planificar ruta (POST /api/v1/rutas/planificar) - crea tramos
+#
+#    B) MS FLOTA (Roles: OPERADOR y TRANSPORTISTA):
+#       1. Crear transportista (POST /api/flota/transportistas) - OPERADOR
+#       2. Crear camión (POST /api/flota/camiones) - OPERADOR
+#       3. Obtener camiones disponibles (POST /api/flota/camiones/disponibles) - OPERADOR
+#       4. Iniciar tramo (POST /api/flota/tramos/{id}/iniciar) - TRANSPORTISTA
+#       5. Finalizar tramo (POST /api/flota/tramos/{id}/finalizar) - TRANSPORTISTA
+#
+#    C) MS SOLICITUDES:
+#       1. Crear solicitud (POST /api/v1/solicitudes) - OPERADOR
+#       2. Listar solicitudes pendientes (GET /api/v1/solicitudes/pendientes) - OPERADOR
+#       3. Aceptar solicitud (PUT /api/v1/solicitudes/{nro}/aceptar) - OPERADOR
+#
+# 5. SWAGGER UI:
 #    - MS Logística: http://localhost:8082/swagger-ui.html
 #    - MS Flota: http://localhost:8083/swagger-ui.html
+#    - Gateway: http://localhost:8080/swagger-ui.html
 #    - Eureka Dashboard: http://localhost:8761
+#
+# 6. KEYCLOAK ADMIN:
+#    - Admin Console: http://localhost:8088
+#    - Usuario: admin / admin123
+#    - Realm: tpi-backend
+#    - Usuarios existentes: operador / operador, transportista / transportista
+#    - Client: backend-client (secret: backend-secret)
 
 ### Fin de colección de pruebas

@@ -1,8 +1,11 @@
 package utn.backend.tpi.tpi_flota_viajes.clients;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+
+import jakarta.ws.rs.BadRequestException;
 import utn.backend.tpi.tpi_flota_viajes.clients.dto.TramoDTO;
 
 @Component
@@ -13,16 +16,24 @@ public class LogisticaApiClient {
         this.restClient = RestClient.builder().baseUrl(logisticaBaseUrl).build();
     }
 
-    /**
-     * Notifica a ms-logistica que un tramo está iniciando
-     * ms-logistica calculará distancias usando coordenadas de sus propios depósitos
-     */
     public TramoDTO iniciarTramo(Long idTramo) {
         return restClient.put()
                 .uri("/api/v1/tramos/{id}/iniciar", idTramo)
                 .retrieve()
+                // Agregar manejo de errores específico si es necesario
+                .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                    throw new BadRequestException("Error en solicitud a Logística: " + response.getStatusText());
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
+                    throw new RuntimeException("Error en servidor de Logística: " + response.getStatusText());
+                })
                 .body(TramoDTO.class);
     }
+
+    /**
+     * Notifica a ms-logistica que un tramo está iniciando
+     * ms-logistica calculará distancias usando coordenadas de sus propios depósitos
+     */
 
     /**
      * Notifica a ms-logistica que un tramo está finalizando
