@@ -151,11 +151,11 @@ Content-Type: application/json
 }
 
 ### Capturar Nro Solicitud
-@nroSolicitud = {{crearSolicitud.response.body.numeroSolicitud}}
+@nroSolicitud = {crearSolicitud.response.body.numeroSolicitud}
 
 ### 2.2 Consultar Estado del Transporte (Req 5)
 # "Consultar el estado del transporte de un contenedor"
-GET {{host}}/api/v1/solicitudes/{{nroSolicitud}}
+GET {{host}}/api/v1/solicitudes/{0c2cfd9a}
 Authorization: Bearer {{tokenCli}}
 
 

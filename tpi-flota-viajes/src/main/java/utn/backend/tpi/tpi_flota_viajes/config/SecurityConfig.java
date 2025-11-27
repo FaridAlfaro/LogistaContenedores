@@ -29,6 +29,8 @@ public class SecurityConfig {
                                                 .hasRole("OPERADOR")
                                                 .requestMatchers(HttpMethod.GET, "/api/flota/camiones/{id}")
                                                 .hasRole("OPERADOR")
+                                                .requestMatchers(HttpMethod.GET, "/api/flota/camiones/dominio/**")
+                                                .authenticated() // Permitir acceso interno desde otros microservicios
                                                 .requestMatchers(HttpMethod.POST, "/api/flota/camiones/disponibles")
                                                 .hasRole("OPERADOR")
                                                 .requestMatchers(HttpMethod.POST, "/api/flota/transportistas")

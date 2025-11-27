@@ -109,6 +109,21 @@ public class CamionService {
     }
 
     /**
+     * Obtener camión por dominio
+     */
+    public CamionResponse obtenerPorDominio(String dominio) {
+        log.debug("Buscando camión con dominio: {}", dominio);
+
+        Camion camion = camionRepository.findByDominio(dominio.toUpperCase())
+                .orElseThrow(() -> {
+                    log.warn("Camión no encontrado con dominio: {}", dominio);
+                    return new NotFoundException("Camión con dominio " + dominio + " no encontrado");
+                });
+
+        return CamionMapper.toResponse(camion);
+    }
+
+    /**
      * Obtener camiones disponibles con capacidad suficiente
      * REGLA DE NEGOCIO: "Un camión no puede transportar contenedores que superen su
      * peso o volumen máximo"

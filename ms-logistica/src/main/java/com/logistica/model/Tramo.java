@@ -2,10 +2,12 @@ package com.logistica.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Tramo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,14 +20,17 @@ public class Tramo {
 
     @ManyToOne
     @JoinColumn(name = "deposito_origen_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Deposito depositoOrigen;
 
     @ManyToOne
     @JoinColumn(name = "deposito_destino_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Deposito depositoDestino;
 
     @ManyToOne
     @JoinColumn(name = "tarifa_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Tarifa tarifa;
 
     private String tipo; // Origen-Deposito, Deposito-Deposito, Deposito-Destino, Origen-Destino

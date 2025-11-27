@@ -42,6 +42,7 @@ public class TransportistaService {
                     .nombre(dto.getNombre())
                     .licencia(dto.getLicencia().toUpperCase())  // Normalizar
                     .contacto(dto.getContacto())
+                    .activo(true)  // Nuevo transportista siempre activo
                     .build();
 
             Transportista guardado = transportistaRepository.save(transportista);

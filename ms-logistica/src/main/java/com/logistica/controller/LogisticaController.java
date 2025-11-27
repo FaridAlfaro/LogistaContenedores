@@ -66,18 +66,16 @@ public class LogisticaController {
             @RequestParam Double lonOrigen,
             @RequestParam Double latDestino,
             @RequestParam Double lonDestino,
-            @RequestParam(required = false) List<Long> idDepositos,
+            @RequestParam(required = false) Long idDepositos,
             @RequestParam Long idTarifa) {
 
-        log.info("Calculando ruta con {} depósitos", idDepositos != null ? idDepositos.size() : 0);
+        log.info("Calculando ruta con depósito: {}", idDepositos);
 
         try {
             Tarifa tarifa = tarifaService.obtenerTarifa(idTarifa);
 
-            List<Deposito> depositos = idDepositos != null && !idDepositos.isEmpty()
-                    ? idDepositos.stream()
-                            .map(depositoService::obtenerDeposito)
-                            .toList()
+            List<Deposito> depositos = idDepositos != null
+                    ? List.of(depositoService.obtenerDeposito(idDepositos))
                     : List.of();
 
             DistanciaResponse distanciaResponse = rutaService.calcularDistancia(

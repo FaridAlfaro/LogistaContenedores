@@ -42,6 +42,11 @@ public class FlotaController {
         return ResponseEntity.ok(camionService.obtenerPorId(id));
     }
 
+    @GetMapping("/camiones/dominio/{dominio}")
+    public ResponseEntity<CamionResponse> getCamionByDominio(@PathVariable String dominio) {
+        return ResponseEntity.ok(camionService.obtenerPorDominio(dominio));
+    }
+
     @GetMapping("/camiones")
     @PreAuthorize("hasRole('OPERADOR')")
     public ResponseEntity<List<CamionResponse>> getAllCamiones() {
