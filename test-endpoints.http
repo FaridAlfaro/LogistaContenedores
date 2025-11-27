@@ -98,7 +98,7 @@ Content-Type: application/json
 }
 
 ### Guardar el Nro de Solicitud generado automáticamente
-@nroSolicitudGenerado = {{crearSolicitud.response.body.numeroSolicitud}}
+# @nroSolicitudGenerado = {{crearSolicitud.response.body.nroSolicitud}}
 
 
 ### 1.2. Listar Pendientes (Rol: OPERADOR)
@@ -108,7 +108,7 @@ Authorization: Bearer {{tokenOp}}
 
 ### 1.3. Aceptar Solicitud (Rol: OPERADOR)
 # Usa la variable capturada o la manual si falló la captura
-PUT {{host}}/api/v1/solicitudes/{{nroSolicitudGenerado}}/aceptar
+PUT {{host}}/api/v1/solicitudes/{{crearSolicitud.response.body.nroSolicitud}}/aceptar
 Authorization: Bearer {{tokenOp}}
 
 
@@ -142,12 +142,13 @@ Content-Type: application/json
 
 ### 2.3. Planificar Ruta (Rol: OPERADOR)
 # Calcula tramos y costos para la solicitud aceptada
+# @name planificarRuta
 POST {{host}}/api/v1/rutas/planificar
 Authorization: Bearer {{tokenOp}}
 Content-Type: application/json
 
 {
-  "nroSolicitud": "{{nroSolicitudGenerado}}",
+  "nroSolicitud": "{{crearSolicitud.response.body.nroSolicitud}}",
   "idDepositos": [], 
   "latOrigen": -34.6037,
   "lonOrigen": -58.3816,
@@ -155,6 +156,9 @@ Content-Type: application/json
   "lonDestino": -64.1888,
   "idTarifa": {{idTarifa}}
 }
+
+### Guardar el ID del primer Tramo generado
+@idTramoGenerado = {{planificarRuta.response.body.ruta.tramos[0].id}}
 
 
 # ==========================================
@@ -173,6 +177,7 @@ Content-Type: application/json
 }
 
 ### 3.2. Crear Camión (Rol: OPERADOR)
+# @name crearCamion
 POST {{host}}/api/flota/camiones
 Authorization: Bearer {{tokenOp}}
 Content-Type: application/json
@@ -198,7 +203,7 @@ Content-Type: application/json
 
 ### 3.4. Iniciar Tramo (Rol: TRANSPORTISTA)
 # Asignamos el camión y arrancamos el viaje
-POST {{host}}/api/flota/tramos/{{idTramo}}/iniciar
+POST {{host}}/api/flota/tramos/{{idTramoGenerado}}/iniciar
 Authorization: Bearer {{tokenTrans}}
 Content-Type: application/json
 
@@ -207,7 +212,7 @@ Content-Type: application/json
 }
 
 ### 3.5. Finalizar Tramo (Rol: TRANSPORTISTA)
-POST {{host}}/api/flota/tramos/{{idTramo}}/finalizar
+POST {{host}}/api/flota/tramos/{{idTramoGenerado}}/finalizar
 Authorization: Bearer {{tokenTrans}}
 Content-Type: application/json
 
