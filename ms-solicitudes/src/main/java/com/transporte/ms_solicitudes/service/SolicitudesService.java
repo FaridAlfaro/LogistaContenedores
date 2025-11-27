@@ -70,6 +70,10 @@ public class SolicitudesService {
         return solicitudRepository.findByEstado(EstadoSolicitud.BORRADOR);
     }
 
+    public List<Solicitud> findAll() {
+        return solicitudRepository.findAll();
+    }
+
     @Transactional
     public Optional<Solicitud> aceptarSolicitud(String nro) {
         return solicitudRepository.findById(nro).map(s -> {

@@ -35,9 +35,9 @@ public class TramoExecutionService {
             log.info("Tramo {} iniciado exitosamente en ms-logistica", idTramo);
             return tramoActualizado;
         } catch (Exception e) {
-            log.error("Error al llamar a ms-logistica...", idTramo, e);
+            log.error("Error al llamar a ms-logistica para iniciar tramo {}: {}", idTramo, e.getMessage(), e);
             // Esto es lo que causa el 500 genérico
-            throw new RuntimeException("Error en servicio de logística...", e);
+            throw new RuntimeException("Error en servicio de logística al iniciar tramo: " + e.getMessage(), e);
         }
     }
 
@@ -59,9 +59,9 @@ public class TramoExecutionService {
             tramoActualizado = logisticaApiClient.finalizarTramo(idTramo, kmRecorridos);
             log.info("Tramo {} finalizado exitosamente en ms-logistica", idTramo);
         } catch (Exception e) {
-            log.error("Error al llamar a ms-logistica...", idTramo, e);
+            log.error("Error al llamar a ms-logistica para finalizar tramo {}: {}", idTramo, e.getMessage(), e);
             // Esto es lo que causa el 500 genérico
-            throw new RuntimeException("Error en servicio de logística...", e);
+            throw new RuntimeException("Error en servicio de logística al finalizar tramo: " + e.getMessage(), e);
         }
 
         // 2. Si exitoso en ms-logistica, liberar el camión localmente
@@ -96,9 +96,9 @@ public class TramoExecutionService {
         try {
             logisticaApiClient.asignarCamion(idTramo, dominioCamion);
         } catch (Exception e) {
-            log.error("Error al llamar a ms-logistica...", idTramo, e);
+            log.error("Error al llamar a ms-logistica para asignar camión al tramo {}: {}", idTramo, e.getMessage(), e);
             // Esto es lo que causa el 500 genérico
-            throw new RuntimeException("Error en servicio de logística...", e);
+            throw new RuntimeException("Error en servicio de logística al asignar camión: " + e.getMessage(), e);
         }
     }
 }

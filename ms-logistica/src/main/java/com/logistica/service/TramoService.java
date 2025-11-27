@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,9 +30,10 @@ public class TramoService {
     /**
      * Marca un tramo como INICIADO (llamado por MS Flota)
      * Publica evento a RabbitMQ para MS Solicitudes
+     * @return El tramo actualizado
      */
     @Transactional
-    public void marcarTramoIniciado(Long idTramo) {
+    public Tramo marcarTramoIniciado(Long idTramo) {
         log.info("Marcando tramo {} como EN CURSO", idTramo);
 
         Tramo tramo = tramoRepository.findById(idTramo)
@@ -57,15 +59,18 @@ public class TramoService {
 
         rabbitTemplate.convertAndSend("solicitudes.exchange", "tramo.iniciado", evento);
         log.info("Evento TramoIniciado publicado para solicitud: {}", ruta.getNroSolicitudRef());
+        
+        return tramo;
     }
 
     /**
      * Marca un tramo como FINALIZADO (llamado por MS Flota)
      * Calcula costos y tiempos reales
      * Publica evento a RabbitMQ para MS Solicitudes
+     * @return El tramo actualizado
      */
     @Transactional
-    public void marcarTramoFinalizado(Long idTramo, double kmRecorridos) {
+    public Tramo marcarTramoFinalizado(Long idTramo, double kmRecorridos) {
         log.info("Marcando tramo {} como FINALIZADO con {} km recorridos", idTramo, kmRecorridos);
 
         Tramo tramo = tramoRepository.findById(idTramo)
@@ -102,6 +107,8 @@ public class TramoService {
 
         rabbitTemplate.convertAndSend("solicitudes.exchange", "tramo.finalizado", evento);
         log.info("Evento TramoFinalizado publicado para solicitud: {}", ruta.getNroSolicitudRef());
+        
+        return tramo;
     }
 
     /**
@@ -147,7 +154,11 @@ public class TramoService {
         return tramoRepository.findByEstadoNot(EstadoTramo.FINALIZADO);
     }
 
-    public java.util.Optional<Tramo> obtenerTramo(Long id) {
+    public Optional<Tramo> obtenerTramo(Long id) {
         return tramoRepository.findById(id);
+    }
+
+    public List<Tramo> listarTramos() {
+        return tramoRepository.findAll();
     }
 }

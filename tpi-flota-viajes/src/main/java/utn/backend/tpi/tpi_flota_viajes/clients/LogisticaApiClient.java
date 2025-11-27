@@ -51,6 +51,12 @@ public class LogisticaApiClient {
         return restClient.put()
                 .uri("/api/v1/tramos/{id}/finalizar?kmRecorridos={kmRecorridos}", idTramo, kmRecorridos)
                 .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                    throw new BadRequestException("Error en solicitud a Logística: " + response.getStatusText());
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
+                    throw new RuntimeException("Error en servidor de Logística: " + response.getStatusText());
+                })
                 .body(TramoDTO.class);
     }
 
@@ -58,6 +64,12 @@ public class LogisticaApiClient {
         restClient.post()
                 .uri("/api/v1/tramos/{id}/asignar?dominio={dominio}", idTramo, dominio)
                 .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                    throw new BadRequestException("Error en solicitud a Logística: " + response.getStatusText());
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
+                    throw new RuntimeException("Error en servidor de Logística: " + response.getStatusText());
+                })
                 .toBodilessEntity();
     }
 }

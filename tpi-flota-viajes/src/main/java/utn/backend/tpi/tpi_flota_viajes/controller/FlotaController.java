@@ -5,6 +5,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 import utn.backend.tpi.tpi_flota_viajes.clients.dto.TramoDTO;
 import utn.backend.tpi.tpi_flota_viajes.dto.request.*;
 import utn.backend.tpi.tpi_flota_viajes.dto.response.CamionResponse;
@@ -29,7 +31,7 @@ public class FlotaController {
 
     @PostMapping("/camiones")
     @PreAuthorize("hasRole('OPERADOR')")
-    public ResponseEntity<CamionResponse> addCamion(@RequestBody CrearCamionRequest crearCamionRequest) {
+    public ResponseEntity<CamionResponse> addCamion(@Valid @RequestBody CrearCamionRequest crearCamionRequest) {
         CamionResponse response = camionService.addCamion(crearCamionRequest);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -40,10 +42,16 @@ public class FlotaController {
         return ResponseEntity.ok(camionService.obtenerPorId(id));
     }
 
+    @GetMapping("/camiones")
+    @PreAuthorize("hasRole('OPERADOR')")
+    public ResponseEntity<List<CamionResponse>> getAllCamiones() {
+        return ResponseEntity.ok(camionService.listarTodos());
+    }
+
     @PostMapping("/camiones/disponibles")
     @PreAuthorize("hasRole('OPERADOR')")
     public ResponseEntity<ListaCamionesDisponiblesResponse> getCamionesDisponibles(
-            @RequestBody ObtenerDisponiblesRequest request) {
+            @Valid @RequestBody ObtenerDisponiblesRequest request) {
         ListaCamionesDisponiblesResponse response = camionService.getCamionesDisponibles(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -51,7 +59,7 @@ public class FlotaController {
     @PostMapping("/transportistas")
     @PreAuthorize("hasRole('OPERADOR')")
     public ResponseEntity<TransportistaResponse> addTransportista(
-            @RequestBody CrearTransportistaRequest crearTransportistaRequest) {
+            @Valid @RequestBody CrearTransportistaRequest crearTransportistaRequest) {
         TransportistaResponse response = transportistaService.crear(crearTransportistaRequest);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }

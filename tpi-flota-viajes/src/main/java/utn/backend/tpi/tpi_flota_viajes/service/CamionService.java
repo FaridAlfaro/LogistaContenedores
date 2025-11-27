@@ -68,14 +68,14 @@ public class CamionService {
         try {
             // CREAR CAMIÓN
             Camion camion = Camion.builder()
-                    .dominio(dto.getDominio().toUpperCase())  // Normalizar a mayúsculas
+                    .dominio(dto.getDominio().toUpperCase()) // Normalizar a mayúsculas
                     .capacidadPeso(dto.getCapacidadPeso())
                     .capacidadVolumen(dto.getCapacidadVolumen())
                     .consumoCombustiblePromedio(dto.getConsumoCombustiblePromedio())
                     .costoPorKm(dto.getCostoPorKm())
-                    .estado(EstadoCamion.DISPONIBLE)  // Nuevo camión siempre comienza DISPONIBLE
+                    .estado(EstadoCamion.DISPONIBLE) // Nuevo camión siempre comienza DISPONIBLE
                     .transportista(transportista)
-                    .idTramoActual(null)  // Sin tramo asignado al inicio
+                    .idTramoActual(null) // Sin tramo asignado al inicio
                     .kmRecorridos(0.0) // Inicia en 0
                     .build();
 
@@ -110,10 +110,11 @@ public class CamionService {
 
     /**
      * Obtener camiones disponibles con capacidad suficiente
-     * REGLA DE NEGOCIO: "Un camión no puede transportar contenedores que superen su peso o volumen máximo"
+     * REGLA DE NEGOCIO: "Un camión no puede transportar contenedores que superen su
+     * peso o volumen máximo"
      */
     public ListaCamionesDisponiblesResponse getCamionesDisponibles(ObtenerDisponiblesRequest request) {
-        
+
         Double capacidadPesoRequerida = request.getCapacidadPesoRequerida();
         Double capacidadVolumenRequerida = request.getCapacidadVolumenRequerida();
 
@@ -131,8 +132,7 @@ public class CamionService {
         List<Camion> camionesDisponibles = camionRepository.findDisponiblesConCapacidad(
                 EstadoCamion.DISPONIBLE,
                 capacidadPesoRequerida,
-                capacidadVolumenRequerida
-        ).stream()
+                capacidadVolumenRequerida).stream()
                 .limit(50)
                 .collect(Collectors.toList());
 
@@ -170,8 +170,7 @@ public class CamionService {
             log.warn("Transición de estado no permitida. Camión: {}, De: {}, A: {}",
                     camionId, estadoActual, nuevoEstado);
             throw new ConflictException(
-                    String.format("No se puede cambiar estado de %s a %s", estadoActual, nuevoEstado)
-            );
+                    String.format("No se puede cambiar estado de %s a %s", estadoActual, nuevoEstado));
         }
 
         camion.setEstado(nuevoEstado);
@@ -192,14 +191,14 @@ public class CamionService {
 
         // No cambiar a sí mismo
         if (estadoActual == nuevoEstado) {
-            return true;  // Es válido no cambiar
+            return true; // Es válido no cambiar
         }
 
         // Transiciones permitidas
         return switch (estadoActual) {
             case DISPONIBLE -> nuevoEstado == EstadoCamion.EN_VIAJE || nuevoEstado == EstadoCamion.MANTENIMIENTO;
-            case EN_VIAJE -> nuevoEstado == EstadoCamion.DISPONIBLE;  // Solo a DISPONIBLE
-            case MANTENIMIENTO -> nuevoEstado == EstadoCamion.DISPONIBLE;  // Solo a DISPONIBLE
+            case EN_VIAJE -> nuevoEstado == EstadoCamion.DISPONIBLE; // Solo a DISPONIBLE
+            case MANTENIMIENTO -> nuevoEstado == EstadoCamion.DISPONIBLE; // Solo a DISPONIBLE
         };
     }
 
@@ -228,8 +227,8 @@ public class CamionService {
             throw new ConflictException("El camión no está disponible");
         }
 
-        camion.setIdTramoActual(tramoId);  // Guardar ID del tramo
-        camion.setEstado(EstadoCamion.EN_VIAJE);  // Cambiar a EN_VIAJE
+        camion.setIdTramoActual(tramoId); // Guardar ID del tramo
+        camion.setEstado(EstadoCamion.EN_VIAJE); // Cambiar a EN_VIAJE
         camionRepository.save(camion);
 
         log.info("Tramo {} asignado al camión {}. Transportista: {}",
@@ -258,7 +257,8 @@ public class CamionService {
 
         // VALIDACIÓN: Debe estar en el tramo correcto
         if (camion.getIdTramoActual() == null || !camion.getIdTramoActual().equals(tramoId)) {
-            log.warn("Intento de liberar camión de un tramo incorrecto. Dominio: {}, Tramo Camion: {}, Tramo Reportado: {}",
+            log.warn(
+                    "Intento de liberar camión de un tramo incorrecto. Dominio: {}, Tramo Camion: {}, Tramo Reportado: {}",
                     dominio, camion.getIdTramoActual(), tramoId);
             throw new ConflictException("El camion no estaba asignado al tramo " + tramoId);
         }
@@ -281,6 +281,7 @@ public class CamionService {
     /**
      * Obtener todos los camiones de un transportista
      */
+    @Transactional(readOnly = true)
     public List<CamionResponse> obtenerPorTransportista(Long transportistaId) {
         log.debug("Buscando camiones del transportista: {}", transportistaId);
 
@@ -307,5 +308,12 @@ public class CamionService {
         long cantidad = camionRepository.countByEstado(EstadoCamion.DISPONIBLE);
         log.debug("Cantidad de camiones disponibles: {}", cantidad);
         return cantidad;
+    }
+
+    @Transactional(readOnly = true)
+    public List<CamionResponse> listarTodos() {
+        return camionRepository.findAll().stream()
+                .map(CamionMapper::toResponse)
+                .collect(Collectors.toList());
     }
 }

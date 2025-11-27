@@ -124,10 +124,10 @@ public class LogisticaController {
      * PUT /api/v1/tramos/{id}/iniciar
      */
     @PutMapping("/tramos/{id}/iniciar")
-    public ResponseEntity<Void> iniciarTramo(@PathVariable Long id) {
+    public ResponseEntity<Tramo> iniciarTramo(@PathVariable Long id) {
         log.info("Tramo {} iniciado (notificación de MS Flota)", id);
-        tramoService.marcarTramoIniciado(id);
-        return ResponseEntity.ok().build();
+        Tramo tramo = tramoService.marcarTramoIniciado(id);
+        return ResponseEntity.ok(tramo);
     }
 
     /**
@@ -135,11 +135,11 @@ public class LogisticaController {
      * PUT /api/v1/tramos/{id}/finalizar
      */
     @PutMapping("/tramos/{id}/finalizar")
-    public ResponseEntity<Void> finalizarTramo(@PathVariable Long id,
+    public ResponseEntity<Tramo> finalizarTramo(@PathVariable Long id,
             @RequestParam double kmRecorridos) {
         log.info("Tramo {} finalizado con {} km (notificación de MS Flota)", id, kmRecorridos);
-        tramoService.marcarTramoFinalizado(id, kmRecorridos);
-        return ResponseEntity.ok().build();
+        Tramo tramo = tramoService.marcarTramoFinalizado(id, kmRecorridos);
+        return ResponseEntity.ok(tramo);
     }
 
     /**
@@ -172,5 +172,19 @@ public class LogisticaController {
     public ResponseEntity<List<Tramo>> obtenerContenedoresPendientes() {
         return ResponseEntity.ok(tramoService.obtenerTramosPendientes());
     }
-    
+
+    @GetMapping("/depositos")
+    public ResponseEntity<List<Deposito>> listarDepositos() {
+        return ResponseEntity.ok(depositoService.listarDepositos());
+    }
+
+    @GetMapping("/tarifas")
+    public ResponseEntity<List<Tarifa>> listarTarifas() {
+        return ResponseEntity.ok(tarifaService.listarTarifas());
+    }
+
+    @GetMapping("/tramos")
+    public ResponseEntity<List<Tramo>> listarTramos() {
+        return ResponseEntity.ok(tramoService.listarTramos());
+    }
 }

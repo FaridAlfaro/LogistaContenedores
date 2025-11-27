@@ -45,6 +45,11 @@ public class SolicitudesController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping
+    public List<Solicitud> listarTodas() {
+        return service.findAll();
+    }
+
     @GetMapping("/pendientes")
     public List<Solicitud> pendientes() {
 

@@ -41,6 +41,7 @@ grant_type=password
 @tokenTrans = {{loginTransportista.response.body.access_token}}
 
 
+
 ### 3. Login CLIENTE (Necesario para crear solicitudes según tu SecurityConfig)
 # Asegúrate de tener un usuario 'cliente' en Keycloak con rol 'CLIENTE'
 # @name loginCliente

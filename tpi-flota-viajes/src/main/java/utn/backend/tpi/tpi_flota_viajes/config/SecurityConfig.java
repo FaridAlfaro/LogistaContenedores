@@ -25,6 +25,8 @@ public class SecurityConfig {
                                                 // Endpoints de FLOTA (Camiones, Transportistas) para ROL OPERADOR
                                                 .requestMatchers(HttpMethod.POST, "/api/flota/camiones")
                                                 .hasRole("OPERADOR")
+                                                .requestMatchers(HttpMethod.GET, "/api/flota/camiones")
+                                                .hasRole("OPERADOR")
                                                 .requestMatchers(HttpMethod.GET, "/api/flota/camiones/{id}")
                                                 .hasRole("OPERADOR")
                                                 .requestMatchers(HttpMethod.POST, "/api/flota/camiones/disponibles")
