@@ -14,7 +14,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -49,7 +48,8 @@ public class SolicitudesControllerTest {
                                 .estado(EstadoSolicitud.BORRADOR)
                                 .build();
 
-                when(service.crearSolicitud(anyString(), anyString(), anyDouble(), anyDouble()))
+                when(service.crearSolicitud(anyString(), anyString(), anyDouble(), anyDouble(), anyDouble(),
+                                anyDouble()))
                                 .thenReturn(solicitud);
 
                 mockMvc.perform(post("/api/v1/solicitudes")

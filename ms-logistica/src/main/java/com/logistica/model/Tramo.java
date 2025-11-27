@@ -13,6 +13,7 @@ public class Tramo {
 
     @ManyToOne
     @JoinColumn(name = "ruta_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Ruta ruta;
 
     @ManyToOne

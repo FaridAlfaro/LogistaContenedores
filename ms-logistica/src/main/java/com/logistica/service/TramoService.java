@@ -122,13 +122,14 @@ public class TramoService {
      * Calcula el tiempo real del tramo
      */
     private double calcularTiempoReal(Tramo tramo) {
-        if (tramo.getFechaHoraInicio() == null || tramo.getFechaHoraFin() == null) {
+        if (tramo.getFechaHoraInicio() == null) {
             return 0;
         }
+        LocalDateTime fin = LocalDateTime.now();
 
         return java.time.temporal.ChronoUnit.SECONDS.between(
                 tramo.getFechaHoraInicio(),
-                tramo.getFechaHoraFin());
+                fin);
     }
 
     @Transactional
@@ -144,5 +145,9 @@ public class TramoService {
     public List<Tramo> obtenerTramosPendientes() {
         // Retorna tramos que están ASIGNADO, INICIADO o ESTIMADO (no FINALIZADO)
         return tramoRepository.findByEstadoNot(EstadoTramo.FINALIZADO);
+    }
+
+    public java.util.Optional<Tramo> obtenerTramo(Long id) {
+        return tramoRepository.findById(id);
     }
 }

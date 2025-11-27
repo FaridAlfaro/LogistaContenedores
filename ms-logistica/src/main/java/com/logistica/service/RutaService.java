@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -32,17 +33,17 @@ public class RutaService {
      */
     @Transactional
     public RutaPlanningResponse planificarRuta(String nroSolicitud,
-                                               List<Deposito> depositosIntermedios,
-                                               Double latOrigen, Double lonOrigen,
-                                               Double latDestino, Double lonDestino,
-                                               Tarifa tarifa) {
+            List<Deposito> depositosIntermedios,
+            Double latOrigen, Double lonOrigen,
+            Double latDestino, Double lonDestino,
+            Tarifa tarifa) {
 
         log.info("Planificando ruta para solicitud: {}", nroSolicitud);
 
         // Crear Ruta
         Ruta ruta = new Ruta();
         ruta.setNroSolicitudRef(nroSolicitud);
-        ruta.getTramos().add(new Tramo()); // Inicializar lista si es necesario
+        ruta.setTramos(new ArrayList<>());
 
         // Crear tramos
         double distanciaTotal = 0;
@@ -56,8 +57,7 @@ public class RutaService {
         // Tramos hacia depósitos intermedios
         for (Deposito deposito : depositosIntermedios) {
             OsrmDistanceResponse response = osrmClient.calcularDistancia(
-                    latActual, lonActual, deposito.getLatitud(), deposito.getLongitud()
-            );
+                    latActual, lonActual, deposito.getLatitud(), deposito.getLongitud());
 
             Tramo tramo = new Tramo();
             tramo.setRuta(ruta);
@@ -82,8 +82,7 @@ public class RutaService {
 
         // Tramo final hacia destino
         OsrmDistanceResponse responseFinal = osrmClient.calcularDistancia(
-                latActual, lonActual, latDestino, lonDestino
-        );
+                latActual, lonActual, latDestino, lonDestino);
 
         Tramo tramoFinal = new Tramo();
         tramoFinal.setRuta(ruta);
@@ -126,8 +125,8 @@ public class RutaService {
      * Calcula distancia, tiempo y costo entre dos puntos con depósitos intermedios
      */
     public DistanciaResponse calcularDistancia(Double latOrigen, Double lonOrigen,
-                                               Double latDestino, Double lonDestino,
-                                               List<Deposito> depositosIntermedios) {
+            Double latDestino, Double lonDestino,
+            List<Deposito> depositosIntermedios) {
 
         log.info("Calculando distancia con {} depósitos intermedios",
                 depositosIntermedios != null ? depositosIntermedios.size() : 0);
@@ -142,8 +141,7 @@ public class RutaService {
         if (depositosIntermedios != null && !depositosIntermedios.isEmpty()) {
             for (Deposito deposito : depositosIntermedios) {
                 OsrmDistanceResponse response = osrmClient.calcularDistancia(
-                        latActual, lonActual, deposito.getLatitud(), deposito.getLongitud()
-                );
+                        latActual, lonActual, deposito.getLatitud(), deposito.getLongitud());
                 distanciaTotal += response.getDistanceKm();
                 tiempoTotal += response.getDurationSeconds();
 
@@ -154,8 +152,7 @@ public class RutaService {
 
         // Calcular tramo final
         OsrmDistanceResponse responseFinal = osrmClient.calcularDistancia(
-                latActual, lonActual, latDestino, lonDestino
-        );
+                latActual, lonActual, latDestino, lonDestino);
 
         distanciaTotal += responseFinal.getDistanceKm();
         tiempoTotal += responseFinal.getDurationSeconds();

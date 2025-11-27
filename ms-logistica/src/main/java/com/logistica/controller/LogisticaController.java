@@ -154,6 +154,17 @@ public class LogisticaController {
     }
 
     /**
+     * Obtiene un tramo por su ID
+     * GET /api/v1/tramos/{id}
+     */
+    @GetMapping("/tramos/{id}")
+    public ResponseEntity<Tramo> getTramoById(@PathVariable Long id) {
+        return tramoService.obtenerTramo(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
      * Consulta contenedores pendientes de entrega y su ubicación
      * GET /api/v1/contenedores/pendientes
      */
@@ -161,4 +172,5 @@ public class LogisticaController {
     public ResponseEntity<List<Tramo>> obtenerContenedoresPendientes() {
         return ResponseEntity.ok(tramoService.obtenerTramosPendientes());
     }
+    
 }

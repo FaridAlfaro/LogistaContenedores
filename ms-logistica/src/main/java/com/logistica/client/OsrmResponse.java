@@ -1,4 +1,3 @@
-/*
 package com.logistica.client;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -17,4 +16,3 @@ public class OsrmResponse {
         private double duration; // en segundos
     }
 }
-*/

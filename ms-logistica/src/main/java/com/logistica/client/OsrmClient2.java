@@ -11,9 +11,9 @@ public class OsrmClient2 {
     private final RestClient restClient;
 
     @SuppressWarnings("null")
-    public OsrmClient2() {
+    public OsrmClient2(@org.springframework.beans.factory.annotation.Value("${app.osrm.base-url}") String osrmUrl) {
         // OSRM local o remoto
-        this.restClient = RestClient.builder().baseUrl("http://osrm:5000").build();
+        this.restClient = RestClient.builder().baseUrl(osrmUrl).build();
     }
 
     /**

@@ -4,6 +4,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import jakarta.ws.rs.BadRequestException;
 import utn.backend.tpi.tpi_flota_viajes.clients.dto.TramoDTO;
@@ -13,7 +16,17 @@ public class LogisticaApiClient {
     private final RestClient restClient;
 
     public LogisticaApiClient(@Value("${api.logistica.url}") String logisticaBaseUrl) {
-        this.restClient = RestClient.builder().baseUrl(logisticaBaseUrl).build();
+        this.restClient = RestClient.builder()
+                .baseUrl(logisticaBaseUrl)
+                .requestInterceptor((request, body, execution) -> {
+                    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                    if (authentication != null && authentication.getCredentials() instanceof Jwt) {
+                        Jwt jwt = (Jwt) authentication.getCredentials();
+                        request.getHeaders().setBearerAuth(jwt.getTokenValue());
+                    }
+                    return execution.execute(request, body);
+                })
+                .build();
     }
 
     public TramoDTO iniciarTramo(Long idTramo) {
@@ -29,11 +42,6 @@ public class LogisticaApiClient {
                 })
                 .body(TramoDTO.class);
     }
-
-    /**
-     * Notifica a ms-logistica que un tramo está iniciando
-     * ms-logistica calculará distancias usando coordenadas de sus propios depósitos
-     */
 
     /**
      * Notifica a ms-logistica que un tramo está finalizando

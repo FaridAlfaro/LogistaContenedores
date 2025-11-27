@@ -1,297 +1,217 @@
-### LogistaContenedores - API Gateway Test
-### Base URL: http://localhost:9090 (Gateway) o http://localhost:8082/8083 (directo)
-### Documentación: Consultar GUIA_TESTING.md
-### Keycloak: http://localhost:8088
+@hostname = localhost
+@port = 8080
+@host = http://{{hostname}}:{{port}}
+@keycloak = http://{{hostname}}:8088
 
-###
-### PASO 0: OBTENER TOKENS (Copia y ejecuta el comando correspondiente a tu shell)
-###
+# Credenciales del Cliente Oauth2 (backend-client)
+@clientId = backend-client
+@clientSecret = backend-secret
 
-### Para POWERSHELL (Windows):
-### $tokenOp = (Invoke-RestMethod -Method Post -Uri 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' -ContentType 'application/x-www-form-urlencoded' -Body 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=operador&password=operador').access_token; Write-Host $tokenOp
+# ==========================================
+# 🔐 SECCIÓN DE AUTENTICACIÓN (Ejecutar primero)
+# ==========================================
 
-### Para BASH/Git Bash:
-### TOKEN_OP=$(curl -s -X POST 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' -H 'Content-Type: application/x-www-form-urlencoded' -d 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=operador&password=operador' | jq -r '.access_token'); echo $TOKEN_OP
+### 1. Login OPERADOR (Obtiene y guarda el token automáticamente)
+# @name loginOperador
+POST {{keycloak}}/realms/tpi-backend/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
 
-### VARIABLES DE ENTORNO - Actualizar con tokens obtenidos de Keycloak
-@baseUrl = http://localhost:8080
-@baseUrlLogistica = http://localhost:8082
-@baseUrlFlota = http://localhost:8083
+grant_type=password
+&client_id={{clientId}}
+&client_secret={{clientSecret}}
+&username=operador
+&password=operador
 
-# Para obtener tokens, ejecuta estos comandos en PowerShell o bash:
-# Operador:
-# $token_op=$(curl -s -X POST 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' -H 'Content-Type: application/x-www-form-urlencoded' -d 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=operador&password=operador' | jq -r '.access_token')
-#
-# Transportista:
-# $token_trans=$(curl -s -X POST 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' -H 'Content-Type: application/x-www-form-urlencoded' -d 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=transportista&password=transportista' | jq -r '.access_token')
+### Variable para usar el token de operador
+@tokenOp = {{loginOperador.response.body.access_token}}
 
-# Tokens (actualiza estos valores con los tokens reales obtenidos):
 
-@token_operador = eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJXU2QwdWZySjlCSnFud2I3QldEMHVob3Bpazlrbi0yRTJISnZiRC02dU9FIn0.eyJleHAiOjE3NjQxNDQ3MzMsImlhdCI6MTc2NDEwODczMywianRpIjoiYmEyNWEyNTAtNzc5Ni00ZWQ5LThiZGYtZDIwNDc5OTU1OTRmIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDg4L3JlYWxtcy90cGktYmFja2VuZCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJlODBhNDY5ZS0yNjc5LTQyYzItODVmYS0xZGFkYTI1ZWU1ZmIiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJiYWNrZW5kLWNsaWVudCIsInNlc3Npb25fc3RhdGUiOiIwM2QwOGRiNS0yZjM0LTRkMGMtYmU0ZS1lNzhiZDYwNWUwZTYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsImh0dHA6Ly9sb2NhbGhvc3Q6NTE3MyJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsIk9QRVJBRE9SIiwiZGVmYXVsdC1yb2xlcy10cGktYmFja2VuZCJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsInNpZCI6IjAzZDA4ZGI1LTJmMzQtNGQwYy1iZTRlLWU3OGJkNjA1ZTBlNiIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwibmFtZSI6Im9wZXJhZG9yIDEiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJvcGVyYWRvciIsImdpdmVuX25hbWUiOiJvcGVyYWRvciIsImZhbWlseV9uYW1lIjoiMSIsImVtYWlsIjoib3BlcmFkb3JAZXhhbXBsZS5jb20ifQ.VyG62h6HUpfJKlo-iRJhRX1iuYFmezIDtYsflsflGG1pAi9eXe2pEmuU24U-UopTburOSnqbxpT6d0HRCUyt5WbkKIxOXXOseM-OyzDa-zdb7fZo1u80hdEEBDuBevRnbXihj2hROY68mEkhb01YpoEREAlhefl3_qvoFfMKKdhlvEPHkgwktQ97yjIG3SqJEOaSkxYFOfcFbU5nu4X6oPJ0lj1QZCPxHxyvmERwIGvrIf-wAWymzNECGz6tw0moU38Ve2c9PBKkap1d3ldgtr-Yg0avKRFIcypanVfuyUn7n_lKaFSRuWGzNNEmLcabg-i8mchYuBpAQ6hoTtU5UA
-@token_transportista = eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJXU2QwdWZySjlCSnFud2I3QldEMHVob3Bpazlrbi0yRTJISnZiRC02dU9FIn0.eyJleHAiOjE3NjQxNDQ2NzUsImlhdCI6MTc2NDEwODY3NSwianRpIjoiNzgyM2IxODgtOGUxOS00MDAwLWEzNDYtOWZlOGM3ODAwN2M4IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDg4L3JlYWxtcy90cGktYmFja2VuZCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiI0MTg4ZjFmNC1kNDZlLTQ0MTMtODc4Zi1kM2NjOWJkNzFlZjkiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJiYWNrZW5kLWNsaWVudCIsInNlc3Npb25fc3RhdGUiOiJhYTQ5NmE1Zi01ZDA2LTRjNTUtOTQxZS1iOWUxNTE5ZTFjNDQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsImh0dHA6Ly9sb2NhbGhvc3Q6NTE3MyJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiVFJBTlNQT1JUSVNUQSIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJkZWZhdWx0LXJvbGVzLXRwaS1iYWNrZW5kIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJlbWFpbCBwcm9maWxlIiwic2lkIjoiYWE0OTZhNWYtNWQwNi00YzU1LTk0MWUtYjllMTUxOWUxYzQ0IiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJuYW1lIjoidHJhbnNwb3J0aXN0YSAxIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidHJhbnNwb3J0aXN0YSIsImdpdmVuX25hbWUiOiJ0cmFuc3BvcnRpc3RhIiwiZmFtaWx5X25hbWUiOiIxIiwiZW1haWwiOiJ0cmFuc3BvcnRpc3RhQGV4YW1wbGUuY29tIn0.kbZTO5zlH5SfDuTHcSihFZa-HcFmDiErlbugqMC5GUbBtaNq2R50vLgB6eOa9mZRO77I0gpZJJZ3lfb44hwygCzZvdT9HkM7zzye0DFLBn-yeQzpmYMnMxr2dQ8vWFc70hZQfFza3Rp6SjDArqNvvSE3wafrFO2GnZGu700_eJjJS0Ul2nPqyp_z_tKJs7zM7I2f_mmx1FsGrmGsdDuSW2hvbcumWk_--jEzpa6_7R_cMoXKxz2EhLyB00wyapGv_ii3SWkXNivqhUFG7CUsCERYKFdkBlDQP93J3x60v9C8Qbm_BZPgz9RkYMOqxSfIzPUIt2tQbyXhL6oimF2usQ
-# IDs de recursos (actualiza según tus creaciones):
-@nro_solicitud = SOL-2024-001
-@idTramo = 1
-@idCamion = 1
-@idTransportista = 1
+### 2. Login TRANSPORTISTA
+# @name loginTransportista
+POST {{keycloak}}/realms/tpi-backend/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password
+&client_id={{clientId}}
+&client_secret={{clientSecret}}
+&username=transportista
+&password=transportista
+
+### Variable para usar el token de transportista
+@tokenTrans = {{loginTransportista.response.body.access_token}}
+
+
+### 3. Login CLIENTE (Necesario para crear solicitudes según tu SecurityConfig)
+# Asegúrate de tener un usuario 'cliente' en Keycloak con rol 'CLIENTE'
+# @name loginCliente
+POST {{keycloak}}/realms/tpi-backend/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password
+&client_id={{clientId}}
+&client_secret={{clientSecret}}
+&username=cliente
+&password=cliente
+
+### Variable para usar el token de cliente
+@tokenCli = {{loginCliente.response.body.access_token}}
+
+
+# ==========================================
+# ⚙️ VARIABLES GLOBALES DE IDs
+# ==========================================
+# Actualiza estos valores manualmente si reinicias la base de datos
+# o usa las respuestas de las peticiones de creación.
+
 @idDeposito = 1
 @idTarifa = 1
+@idTransportista = 1
+@idCamion = 1
+# Este valor se intenta capturar automáticamente en el paso de creación de solicitud
+@nroSolicitud = SOL-2024-001 
+@idTramo = 1
 
-### ========================================
-### SOLICITUDES (ms-solicitudes)
-### ========================================
 
-### 1. Crear nueva solicitud (Rol: OPERADOR)
-# Este endpoint crea una nueva solicitud y devuelve un número de solicitud único
-# La solicitud se crea en estado BORRADOR
-POST {{baseUrl}}/api/v1/solicitudes
-Authorization: Bearer {{token_operador}}
+# ==========================================
+# 📦 FLUJO 1: MICROSERVICIO SOLICITUDES
+# ==========================================
+
+### 1.1. Crear Solicitud (Rol: CLIENTE)
+# @name crearSolicitud
+POST {{host}}/api/v1/solicitudes
+Authorization: Bearer {{tokenCli}}
 Content-Type: application/json
 
 {
-  "idCliente": "cliente-001",
-  "idContenedor": "contenedor-99",
+  "idCliente": "cliente-juan",
+  "idContenedor": "CONT-999",
   "origen": {
     "dir": "Puerto Buenos Aires",
     "lat": -34.6037,
     "lon": -58.3816
   },
   "destino": {
-    "dir": "Puerto La Plata",
-    "lat": -34.7912,
-    "lon": -57.9736
+    "dir": "Córdoba Capital",
+    "lat": -31.4201,
+    "lon": -64.1888
   }
 }
 
-###
-### 2. Obtener solicitud por número (Rol: OPERADOR)
-# Obtiene los detalles de una solicitud específica usando su número (nro)
-# Reemplaza "{{nro_solicitud}}" con el número devuelto por la creación
-GET {{baseUrl}}/api/v1/solicitudes/{{nro_solicitud}}
-Authorization: Bearer {{token_operador}}
+### Guardar el Nro de Solicitud generado automáticamente
+@nroSolicitudGenerado = {{crearSolicitud.response.body.numeroSolicitud}}
 
-###
-### 3. Listar solicitudes pendientes (Rol: OPERADOR)
-# Lista todas las solicitudes en estado BORRADOR
-# Solo accesible para operadores
-GET {{baseUrl}}/api/v1/solicitudes/pendientes
-Authorization: Bearer {{token_operador}}
 
-###
-### 4. Aceptar solicitud (Rol: OPERADOR)
-# Cambia el estado de una solicitud de BORRADOR a ACEPTADA
-# Requiere el número de solicitud como parámetro de ruta
-PUT {{baseUrl}}/api/v1/solicitudes/{{nro_solicitud}}/aceptar
-Authorization: Bearer {{token_operador}}
+### 1.2. Listar Pendientes (Rol: OPERADOR)
+GET {{host}}/api/v1/solicitudes/pendientes
+Authorization: Bearer {{tokenOp}}
 
-###
-### ========================================
-### MS LOGÍSTICA - Endpoints
-### ========================================
 
-### 1. Crear Depósito
-# Crea un nuevo depósito en el sistema
-POST {{baseUrl}}/api/v1/depositos
+### 1.3. Aceptar Solicitud (Rol: OPERADOR)
+# Usa la variable capturada o la manual si falló la captura
+PUT {{host}}/api/v1/solicitudes/{{nroSolicitudGenerado}}/aceptar
+Authorization: Bearer {{tokenOp}}
+
+
+# ==========================================
+# 🚚 FLUJO 2: MICROSERVICIO LOGÍSTICA
+# ==========================================
+
+### 2.1. Crear Depósito (Rol: OPERADOR)
+POST {{host}}/api/v1/depositos
+Authorization: Bearer {{tokenOp}}
 Content-Type: application/json
 
 {
-  "nombre": "Depósito Central Buenos Aires",
-  "direccion": "Av. Corrientes 1234, CABA",
-  "latitud": -34.6037,
-  "longitud": -58.3816,
+  "nombre": "Centro Logístico Rosario",
+  "direccion": "Av. Circunvalación 123",
+  "latitud": -32.9442,
+  "longitud": -60.6505,
   "costoEstadiaDiario": 5000.0
 }
 
-###
-### 2. Crear Tarifa
-# Crea una nueva tarifa vigente desde una fecha
-POST {{baseUrl}}/api/v1/tarifas
+### 2.2. Crear Tarifa (Rol: OPERADOR)
+POST {{host}}/api/v1/tarifas
+Authorization: Bearer {{tokenOp}}
 Content-Type: application/json
 
 {
-  "valorKMBase": 150.0,
-  "costoLitroCombustible": 850.0,
-  "fechaVigencia": "2024-01-01"
+  "valorKMBase": 200.0,
+  "costoLitroCombustible": 950.0,
+  "fechaVigencia": "2024-11-01"
 }
 
-###
-### 3. Calcular Ruta (GET)
-# Calcula distancia, tiempo y costo estimado de una ruta
-GET {{baseUrl}}/api/v1/rutas/calcular?latOrigen=-34.6037&lonOrigen=-58.3816&latDestino=-34.7912&lonDestino=-57.9736&idTarifa={{idTarifa}}
-
-###
-### 4. Calcular Ruta con Depósitos (GET)
-# Calcula ruta pasando por depósitos intermedios
-GET {{baseUrl}}/api/v1/rutas/calcular?latOrigen=-34.6037&lonOrigen=-58.3816&latDestino=-34.7912&lonDestino=-57.9736&idDepositos={{idDeposito}}&idTarifa={{idTarifa}}
-
-###
-### 5. Planificar Ruta (POST)
-# Planifica una ruta completa con tramos, calculando distancias y costos
-POST {{baseUrl}}/api/v1/rutas/planificar
+### 2.3. Planificar Ruta (Rol: OPERADOR)
+# Calcula tramos y costos para la solicitud aceptada
+POST {{host}}/api/v1/rutas/planificar
+Authorization: Bearer {{tokenOp}}
 Content-Type: application/json
 
 {
-  "nroSolicitud": "SOL-2024-001",
-  "idDepositos": [{{idDeposito}}],
+  "nroSolicitud": "{{nroSolicitudGenerado}}",
+  "idDepositos": [], 
   "latOrigen": -34.6037,
   "lonOrigen": -58.3816,
-  "latDestino": -34.7912,
-  "lonDestino": -57.9736,
+  "latDestino": -31.4201,
+  "lonDestino": -64.1888,
   "idTarifa": {{idTarifa}}
 }
 
-###
-### 6. Iniciar Tramo (INTERNO)
-# Marca un tramo como iniciado. Usado internamente por MS Flota
-PUT {{baseUrl}}/api/v1/tramos/{{idTramo}}/iniciar
 
-###
-### 7. Finalizar Tramo (INTERNO)
-# Marca un tramo como finalizado con kilómetros recorridos
-PUT {{baseUrl}}/api/v1/tramos/{{idTramo}}/finalizar?kmRecorridos=125.5
+# ==========================================
+# 🚛 FLUJO 3: MICROSERVICIO FLOTA
+# ==========================================
 
-###
-### ========================================
-### MS FLOTA VIAJES - Endpoints
-### ========================================
-
-### 1. Crear Transportista (Rol: OPERADOR)
-# Crea un nuevo transportista en el sistema
-POST {{baseUrl}}/api/flota/transportistas
-Authorization: Bearer {{token_operador}}
+### 3.1. Crear Transportista (Rol: OPERADOR)
+POST {{host}}/api/flota/transportistas
+Authorization: Bearer {{tokenOp}}
 Content-Type: application/json
 
 {
-  "nombre": "Juan Pérez",
-  "licencia": "LIC12345678",
-  "contacto": "juan.perez@email.com"
+  "nombre": "Logística Express SA",
+  "licencia": "L-99887766",
+  "contacto": "contacto@logisticaexpress.com"
 }
 
-###
-### 2. Crear Camión (Rol: OPERADOR)
-# Registra un nuevo camión asociado a un transportista
-POST {{baseUrl}}/api/flota/camiones
-Authorization: Bearer {{token_operador}}
+### 3.2. Crear Camión (Rol: OPERADOR)
+POST {{host}}/api/flota/camiones
+Authorization: Bearer {{tokenOp}}
 Content-Type: application/json
 
 {
-  "dominio": "AY 123 BC",
-  "capacidadPeso": 20000.0,
-  "capacidadVolumen": 50.0,
+  "dominio": "AA 555 BB",
+  "capacidadPeso": 25000.0,
+  "capacidadVolumen": 80.0,
   "idTransportista": {{idTransportista}},
-  "costoPorKm": 120.0,
-  "consumoCombustiblePromedio": 2.5
+  "costoPorKm": 150.0,
+  "consumoCombustiblePromedio": 3.0
 }
 
-###
-### 3. Obtener Camión por ID (Rol: OPERADOR)
-# Obtiene los detalles de un camión específico
-GET {{baseUrl}}/api/flota/camiones/{{idCamion}}
-Authorization: Bearer {{token_operador}}
-
-###
-### 4. Obtener Camiones Disponibles (Rol: OPERADOR)
-# Busca camiones disponibles que cumplan con los requisitos de capacidad
-POST {{baseUrl}}/api/flota/camiones/disponibles
-Authorization: Bearer {{token_operador}}
+### 3.3. Obtener Camiones Disponibles (Rol: OPERADOR)
+POST {{host}}/api/flota/camiones/disponibles
+Authorization: Bearer {{tokenOp}}
 Content-Type: application/json
 
 {
-  "capacidadPesoRequerida": 15000.0,
-  "capacidadVolumenRequerida": 40.0
+  "capacidadPesoRequerida": 1000.0,
+  "capacidadVolumenRequerida": 10.0
 }
 
-###
-### 5. Obtener Camiones por Transportista (Rol: OPERADOR)
-# Lista todos los camiones de un transportista específico
-GET {{baseUrl}}/api/flota/transportistas/{{idTransportista}}/camiones
-Authorization: Bearer {{token_operador}}
-
-###
-### 6. Iniciar Tramo (Rol: TRANSPORTISTA)
-# Inicia la ejecución de un tramo con un camión específico
-POST {{baseUrl}}/api/flota/tramos/{{idTramo}}/iniciar
-Authorization: Bearer {{token_transportista}}
+### 3.4. Iniciar Tramo (Rol: TRANSPORTISTA)
+# Asignamos el camión y arrancamos el viaje
+POST {{host}}/api/flota/tramos/{{idTramo}}/iniciar
+Authorization: Bearer {{tokenTrans}}
 Content-Type: application/json
 
 {
-  "dominioCamion": "AY 123 BC"
+  "dominioCamion": "AA 555 BB"
 }
 
-###
-### 7. Finalizar Tramo (Rol: TRANSPORTISTA)
-# Finaliza un tramo en curso registrando los kilómetros recorridos
-POST {{baseUrl}}/api/flota/tramos/{{idTramo}}/finalizar
-Authorization: Bearer {{token_transportista}}
+### 3.5. Finalizar Tramo (Rol: TRANSPORTISTA)
+POST {{host}}/api/flota/tramos/{{idTramo}}/finalizar
+Authorization: Bearer {{tokenTrans}}
 Content-Type: application/json
 
 {
-  "dominioCamion": "AY 123 BC",
-  "kmRecorridos": 125.5
+  "dominioCamion": "AA 555 BB",
+  "kmRecorridos": 750.0
 }
-
-###
-### ========================================
-### INSTRUCCIONES DE USO
-### ========================================
-
-# 1. PASO 1: Obtener tokens desde Keycloak
-#
-#    Opción A: PowerShell (desde el repo root):
-#    $tokenOp = (Invoke-RestMethod -Method Post -Uri 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' -ContentType 'application/x-www-form-urlencoded' -Body 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=operador&password=operador').access_token
-#    $tokenTrans = (Invoke-RestMethod -Method Post -Uri 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' -ContentType 'application/x-www-form-urlencoded' -Body 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=transportista&password=transportista').access_token
-#    Write-Host "Operador: $tokenOp"
-#    Write-Host "Transportista: $tokenTrans"
-#
-#    Opción B: cURL (desde bash o Git Bash):
-#    TOKEN_OP=$(curl -s -X POST 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' \
-#      -H 'Content-Type: application/x-www-form-urlencoded' \
-#      -d 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=operador&password=operador' | jq -r '.access_token')
-#    TOKEN_TRANS=$(curl -s -X POST 'http://localhost:8088/realms/tpi-backend/protocol/openid-connect/token' \
-#      -H 'Content-Type: application/x-www-form-urlencoded' \
-#      -d 'grant_type=password&client_id=backend-client&client_secret=backend-secret&username=transportista&password=transportista' | jq -r '.access_token')
-#    echo "Operador: $TOKEN_OP"
-#    echo "Transportista: $TOKEN_TRANS"
-#
-# 2. PASO 2: Reemplaza los valores de @token_operador y @token_transportista en la sección de variables (líneas 14-15)
-#    con los tokens obtenidos.
-#
-# 3. PASO 3: Usar REST Client en VS Code
-#    - Instala la extensión "REST Client" (humao.rest-client)
-#    - Abre este archivo (test-endpoints.http)
-#    - Haz clic en "Send Request" sobre cada endpoint para ejecutar
-#
-# 4. FLUJO DE PRUEBA COMPLETO RECOMENDADO:
-#
-#    A) MS LOGÍSTICA (Rol: OPERADOR):
-#       1. Crear depósito (POST /api/v1/depositos)
-#       2. Crear tarifa (POST /api/v1/tarifas)
-#       3. Calcular ruta (GET /api/v1/rutas/calcular)
-#       4. Planificar ruta (POST /api/v1/rutas/planificar) - crea tramos
-#
-#    B) MS FLOTA (Roles: OPERADOR y TRANSPORTISTA):
-#       1. Crear transportista (POST /api/flota/transportistas) - OPERADOR
-#       2. Crear camión (POST /api/flota/camiones) - OPERADOR
-#       3. Obtener camiones disponibles (POST /api/flota/camiones/disponibles) - OPERADOR
-#       4. Iniciar tramo (POST /api/flota/tramos/{id}/iniciar) - TRANSPORTISTA
-#       5. Finalizar tramo (POST /api/flota/tramos/{id}/finalizar) - TRANSPORTISTA
-#
-#    C) MS SOLICITUDES:
-#       1. Crear solicitud (POST /api/v1/solicitudes) - OPERADOR
-#       2. Listar solicitudes pendientes (GET /api/v1/solicitudes/pendientes) - OPERADOR
-#       3. Aceptar solicitud (PUT /api/v1/solicitudes/{nro}/aceptar) - OPERADOR
-#
-# 5. SWAGGER UI:
-#    - MS Logística: http://localhost:8082/swagger-ui.html
-#    - MS Flota: http://localhost:8083/swagger-ui.html
-#    - Gateway: http://localhost:8080/swagger-ui.html
-#    - Eureka Dashboard: http://localhost:8761
-#
-# 6. KEYCLOAK ADMIN:
-#    - Admin Console: http://localhost:8088
-#    - Usuario: admin / admin123
-#    - Realm: tpi-backend
-#    - Usuarios existentes: operador / operador, transportista / transportista
-#    - Client: backend-client (secret: backend-secret)
-
-### Fin de colección de pruebas

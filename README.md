@@ -9,8 +9,8 @@ This document provides a comprehensive list of the API endpoints available in th
 
 | Method | Endpoint | Description | Request Body | Response | Roles |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/` | Create a new transport request. | `SolicitudRequestDTO` | `SolicitudResponseDTO` | `CLIENTE`, `OPERADOR` |
-| `GET` | `/{nro}` | Get a request by its number (UUID). | - | `Solicitud` | `CLIENTE`, `OPERADOR` |
+| `POST` | `/` | Create a new transport request. | `SolicitudRequestDTO` | `SolicitudResponseDTO` | `CLIENTE` |
+| `GET` | `/{nro}` | Get a request by its number (UUID). | - | `Solicitud` | `CLIENTE` |
 | `GET` | `/pendientes` | Get all requests with status `BORRADOR`. | - | `List<Solicitud>` | `OPERADOR` |
 | `PUT` | `/{nro}/aceptar` | Accept a request (changes status to `ACEPTADA`). | - | `Solicitud` | `OPERADOR` |
 
@@ -21,10 +21,12 @@ This document provides a comprehensive list of the API endpoints available in th
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `POST` | `/rutas/planificar` | Plan a route for a request. | `PlanificarRutaRequest` | `RutaPlanningResponse` | `OPERADOR` |
 | `GET` | `/rutas/calcular` | Calculate distance and cost between points. | - | `CalculoResponse` | `OPERADOR` |
-| `POST` | `/depositos` | Create a new deposit. | `Deposito` | `Deposito` | `ADMIN`, `OPERADOR` |
-| `POST` | `/tarifas` | Create a new tariff. | `Tarifa` | `Tarifa` | `ADMIN` |
-| `GET` | `/contenedores/pendientes` | Get pending containers (tramos not finalized). | - | `List<Tramo>` | `OPERADOR`, `CLIENTE` |
-| `POST` | `/tramos/{id}/asignar` | Assign a truck to a tramo (Internal/Direct). | - | `Void` | `OPERADOR` |
+| `POST` | `/depositos` | Create a new deposit. | `Deposito` | `Deposito` | `OPERADOR` |
+| `POST` | `/tarifas` | Create a new tariff. | `Tarifa` | `Tarifa` | `OPERADOR` |
+| `GET` | `/contenedores/pendientes` | Get pending containers (tramos not finalized). | - | `List<Tramo>` | `Authenticated` (CLIENTE, OPERADOR) |
+| `POST` | `/tramos/{id}/asignar` | Assign a truck to a tramo (Internal/Direct). | - | `Void` | `Authenticated` (Internal) |
+| `PUT` | `/tramos/{id}/iniciar` | Mark tramo as started. | - | `Void` | `Authenticated` (Internal) |
+| `PUT` | `/tramos/{id}/finalizar` | Mark tramo as finished. | - | `Void` | `Authenticated` (Internal) |
 
 ## 3. Microservice: `tpi-flota-viajes` (Fleet & Trips)
 **Base Path:** `/api/flota`
@@ -78,3 +80,12 @@ This document provides a comprehensive list of the API endpoints available in th
   "idTransportista": 1
 }
 ```
+
+## Roles & Security
+
+The API uses Role-Based Access Control (RBAC) via Keycloak. The following roles are defined:
+
+*   **CLIENTE**: Can create and view their own transport requests.
+*   **OPERADOR**: Has full access to manage logistics, fleet, and approve requests. Can also view pending requests.
+*   **TRANSPORTISTA**: Can manage trips (start/finish) assigned to them.
+*   **Authenticated (Internal)**: Endpoints intended for service-to-service communication or general authenticated access.
