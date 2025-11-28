@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -37,12 +36,19 @@ public class TransportistaService {
     public TransportistaResponse crear(CrearTransportistaRequest dto) {
         log.info("Creando transportista con licencia: {}", dto.getLicencia());
 
+        // Check if exists
+        List<Transportista> existing = transportistaRepository.findByLicencia(dto.getLicencia().toUpperCase());
+        if (!existing.isEmpty()) {
+            log.info("Transportista ya existe con licencia: {}. Retornando existente.", dto.getLicencia());
+            return TransportistaMapper.toResponse(existing.get(0));
+        }
+
         try {
             Transportista transportista = Transportista.builder()
                     .nombre(dto.getNombre())
-                    .licencia(dto.getLicencia().toUpperCase())  // Normalizar
+                    .licencia(dto.getLicencia().toUpperCase()) // Normalizar
                     .contacto(dto.getContacto())
-                    .activo(true)  // Nuevo transportista siempre activo
+                    .activo(true) // Nuevo transportista siempre activo
                     .build();
 
             Transportista guardado = transportistaRepository.save(transportista);
@@ -83,7 +89,7 @@ public class TransportistaService {
         Transportista transportista = transportistaRepository.findById(transportistaId)
                 .orElseThrow(() -> {
                     log.warn("Transportista no encontrado: {}", transportistaId);
-                    return new NotFoundException("Transportista con ID "+ transportistaId  + " no encontrado");
+                    return new NotFoundException("Transportista con ID " + transportistaId + " no encontrado");
                 });
 
         // VALIDACIÓN 1: Verificar lista en memoria
@@ -92,18 +98,17 @@ public class TransportistaService {
             throw new ConflictException(
                     "No se puede desactivar. El transportista tiene " +
                             transportista.getCamiones().size() +
-                            " camiones asignados. Reasigne los camiones primero."
-            );
+                            " camiones asignados. Reasigne los camiones primero.");
         }
 
         // VALIDACIÓN 2: Verificar en BD (garantía adicional contra inconsistencias)
         long countCamiones = camionRepository.countByTransportistaId(transportistaId);
         if (countCamiones > 0) {
-            log.error("ALERTA CRÍTICA: Inconsistencia detectada. Transportista {} tiene {} camiones en BD pero lista vacía en memoria",
+            log.error(
+                    "ALERTA CRÍTICA: Inconsistencia detectada. Transportista {} tiene {} camiones en BD pero lista vacía en memoria",
                     transportistaId, countCamiones);
             throw new ConflictException(
-                    "Error de integridad en BD: Se detectó inconsistencia. Contacte al administrador."
-            );
+                    "Error de integridad en BD: Se detectó inconsistencia. Contacte al administrador.");
         }
 
         // PASO 3: Soft delete (marcar como inactivo, no eliminar)
@@ -128,9 +133,7 @@ public class TransportistaService {
                 });
 
         // Obtener camiones
-        List<Camion> camiones = transportista.getCamiones() != null ?
-                transportista.getCamiones() :
-                new ArrayList<>();
+        List<Camion> camiones = transportista.getCamiones() != null ? transportista.getCamiones() : new ArrayList<>();
 
         log.info("Se encontraron {} camiones para transportista: {}", camiones.size(), transportistaId);
 

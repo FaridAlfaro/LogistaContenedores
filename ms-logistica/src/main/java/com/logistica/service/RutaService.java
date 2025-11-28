@@ -40,6 +40,18 @@ public class RutaService {
 
         log.info("Planificando ruta para solicitud: {}", nroSolicitud);
 
+        // Check if exists
+        Ruta existing = rutaRepository.findByNroSolicitudRef(nroSolicitud);
+        if (existing != null) {
+            log.info("Ruta ya existe para solicitud: {}. Retornando existente.", nroSolicitud);
+
+            // Calculate totals from existing tramos
+            double costoTotal = existing.getTramos().stream().mapToDouble(Tramo::getCostoEstimado).sum();
+            double tiempoTotal = existing.getTramos().stream().mapToDouble(Tramo::getTiempoEstimado).sum();
+
+            return new RutaPlanningResponse(existing, costoTotal, tiempoTotal);
+        }
+
         // Crear Ruta
         Ruta ruta = new Ruta();
         ruta.setNroSolicitudRef(nroSolicitud);
@@ -114,7 +126,7 @@ public class RutaService {
 
     public Ruta obtenerRuta(Long id) {
         return rutaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ruta no encontrada: " + id));
+                .orElseThrow(() -> new com.logistica.exception.RutaNotFoundException(id));
     }
 
     public Ruta obtenerRutaPorSolicitud(String nroSolicitud) {

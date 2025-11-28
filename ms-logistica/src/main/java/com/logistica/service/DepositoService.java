@@ -16,6 +16,14 @@ public class DepositoService {
 
     public Deposito crearDeposito(Deposito deposito) {
         log.info("Creando depósito: {}", deposito.getNombre());
+
+        // Check if exists
+        List<Deposito> existing = depositoRepository.findByNombre(deposito.getNombre());
+        if (!existing.isEmpty()) {
+            log.info("Depósito ya existe: {}. Retornando existente.", deposito.getNombre());
+            return existing.get(0);
+        }
+
         return depositoRepository.save(deposito);
     }
 
@@ -25,7 +33,7 @@ public class DepositoService {
 
     public Deposito obtenerDeposito(Long id) {
         return depositoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Depósito no encontrado: " + id));
+                .orElseThrow(() -> new com.logistica.exception.NotFoundException("Depósito no encontrado: " + id));
     }
 
     public Deposito actualizarDeposito(Long id, Deposito depositoActualizado) {

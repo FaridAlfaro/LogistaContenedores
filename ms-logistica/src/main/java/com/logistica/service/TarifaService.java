@@ -16,6 +16,14 @@ public class TarifaService {
 
     public Tarifa crearTarifa(Tarifa tarifa) {
         log.info("Creando tarifa vigente desde: {}", tarifa.getFechaVigencia());
+
+        // Check if exists
+        List<Tarifa> existing = tarifaRepository.findByFechaVigencia(tarifa.getFechaVigencia());
+        if (!existing.isEmpty()) {
+            log.info("Tarifa ya existe para fecha: {}. Retornando existente.", tarifa.getFechaVigencia());
+            return existing.get(0);
+        }
+
         return tarifaRepository.save(tarifa);
     }
 
@@ -25,7 +33,7 @@ public class TarifaService {
 
     public Tarifa obtenerTarifa(Long id) {
         return tarifaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tarifa no encontrada: " + id));
+                .orElseThrow(() -> new com.logistica.exception.NotFoundException("Tarifa no encontrada: " + id));
     }
 
     public Tarifa actualizarTarifa(Long id, Tarifa tarifaActualizada) {

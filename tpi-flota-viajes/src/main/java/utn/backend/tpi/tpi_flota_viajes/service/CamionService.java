@@ -39,6 +39,20 @@ public class CamionService {
     public CamionResponse addCamion(CrearCamionRequest dto) {
         log.info("Iniciando creación de camión con dominio: {}", dto.getDominio());
 
+        // Check if exists
+        List<Camion> existing = camionRepository.findByDominio(dto.getDominio().toUpperCase());
+        if (!existing.isEmpty()) {
+            Camion c = existing.get(0);
+            // Validate it belongs to the same transportista
+            if (c.getTransportista() == null || !c.getTransportista().getId().equals(dto.getIdTransportista())) {
+                log.warn("Conflicto: Camión {} ya existe pero pertenece a otro transportista", dto.getDominio());
+                throw new ConflictException(
+                        "El dominio " + dto.getDominio() + " ya existe y pertenece a otro transportista");
+            }
+            log.info("Camion ya existe con dominio: {}. Retornando existente.", dto.getDominio());
+            return CamionMapper.toResponse(c);
+        }
+
         // VALIDACIÓN 1: Transportista existe
         Transportista transportista = transportistaRepository.findById(dto.getIdTransportista())
                 .orElseThrow(() -> {
@@ -111,14 +125,18 @@ public class CamionService {
     /**
      * Obtener camión por dominio
      */
+    /**
+     * Obtener camión por dominio
+     */
     public CamionResponse obtenerPorDominio(String dominio) {
         log.debug("Buscando camión con dominio: {}", dominio);
 
-        Camion camion = camionRepository.findByDominio(dominio.toUpperCase())
-                .orElseThrow(() -> {
-                    log.warn("Camión no encontrado con dominio: {}", dominio);
-                    return new NotFoundException("Camión con dominio " + dominio + " no encontrado");
-                });
+        List<Camion> camiones = camionRepository.findByDominio(dominio.toUpperCase());
+        if (camiones.isEmpty()) {
+            log.warn("Camión no encontrado con dominio: {}", dominio);
+            throw new NotFoundException("Camión con dominio " + dominio + " no encontrado");
+        }
+        Camion camion = camiones.get(0);
 
         return CamionMapper.toResponse(camion);
     }
@@ -232,8 +250,11 @@ public class CamionService {
             throw new BadRequestException("ID de tramo inválido");
         }
 
-        Camion camion = camionRepository.findByDominio(dominio)
-                .orElseThrow(() -> new NotFoundException("Camión con dominio " + dominio + " no encontrado"));
+        List<Camion> camiones = camionRepository.findByDominio(dominio);
+        if (camiones.isEmpty()) {
+            throw new NotFoundException("Camión con dominio " + dominio + " no encontrado");
+        }
+        Camion camion = camiones.get(0);
 
         // VALIDACIÓN: Camión debe estar disponible
         if (camion.getEstado() != EstadoCamion.DISPONIBLE) {
@@ -257,11 +278,12 @@ public class CamionService {
     public void liberarCamion(String dominio, Long tramoId, double kmRecorridos) {
         log.debug("Liberando camión: {}", dominio);
 
-        Camion camion = camionRepository.findByDominio(dominio)
-                .orElseThrow(() -> {
-                    log.warn("Camión no encontrado para liberar. Dominio: {}", dominio);
-                    return new NotFoundException("Camión con dominio " + dominio + " no encontrado");
-                });
+        List<Camion> camiones = camionRepository.findByDominio(dominio);
+        if (camiones.isEmpty()) {
+            log.warn("Camión no encontrado para liberar. Dominio: {}", dominio);
+            throw new NotFoundException("Camión con dominio " + dominio + " no encontrado");
+        }
+        Camion camion = camiones.get(0);
 
         // VALIDACIÓN: Debe estar EN_VIAJE
         if (camion.getEstado() != EstadoCamion.EN_VIAJE) {

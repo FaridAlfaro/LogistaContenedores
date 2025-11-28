@@ -193,4 +193,22 @@ public class GlobalExceptionHandler {
 
                 return new ResponseEntity<>(errorResponse, HttpStatus.BAD_GATEWAY);
         }
+
+        @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+        public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+                        org.springframework.http.converter.HttpMessageNotReadableException ex,
+                        WebRequest request) {
+
+                log.warn("Error de lectura del mensaje HTTP: {}", ex.getMessage());
+
+                ErrorResponse errorResponse = ErrorResponse.builder()
+                                .mensaje("Cuerpo de la solicitud inválido o mal formado")
+                                .codigo("INVALID_REQUEST_BODY")
+                                .status(HttpStatus.BAD_REQUEST.value())
+                                .timestamp(LocalDateTime.now())
+                                .path(request.getDescription(false).replace("uri=", ""))
+                                .build();
+
+                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
 }

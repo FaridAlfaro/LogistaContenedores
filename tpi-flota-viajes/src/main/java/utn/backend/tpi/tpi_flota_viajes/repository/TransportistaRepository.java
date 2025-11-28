@@ -1,4 +1,5 @@
 package utn.backend.tpi.tpi_flota_viajes.repository;
+
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import utn.backend.tpi.tpi_flota_viajes.model.Transportista;
@@ -12,7 +13,7 @@ import java.util.Optional;
 public interface TransportistaRepository extends JpaRepository<Transportista, Long> {
 
     // Buscar transportista por licencia (debe ser único)
-    Optional<Transportista> findByLicencia(String licencia);
+    java.util.List<Transportista> findByLicencia(String licencia);
 
     // Buscar solo activos
     @Query("SELECT t FROM Transportista t WHERE t.activo = true")

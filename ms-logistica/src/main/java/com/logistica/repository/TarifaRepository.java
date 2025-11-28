@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TarifaRepository extends JpaRepository<Tarifa, Long> {
+    java.util.List<Tarifa> findByFechaVigencia(java.time.LocalDate fechaVigencia);
 }
