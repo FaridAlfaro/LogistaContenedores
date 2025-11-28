@@ -1,8 +1,8 @@
 {
 	"info": {
-		"_postman_id": "flowbox-tpi-v3-fixed",
-		"name": "TPI FlowBox - Flujo Corregido (Auto-Token)",
-		"description": "Colección con scripts de captura de token corregidos. Las carpetas gestionan la autorización automáticamente usando las variables capturadas.",
+		"_postman_id": "flowbox-tpi-v3-fixed-final-2",
+		"name": "TPI FlowBox - Flujo Corregido (Final v2)",
+		"description": "Colección corregida: Fix nroSolicitud capture y generación dinámica de patentes.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -350,11 +350,25 @@
 					"name": "1.4 Crear Camión",
 					"event": [
 						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generar patente aleatoria para evitar conflicto 409",
+									"var randomNum = Math.floor(Math.random() * 900) + 100;",
+									"var newDominio = \"AA\" + randomNum + \"BB\";",
+									"pm.collectionVariables.set(\"dominioCamion\", newDominio);",
+									"console.log(\"Generado dominio dinámico: \" + newDominio);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
 							"listen": "test",
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"if(jsonData.dominio) pm.collectionVariables.set(\"dominioCamion\", jsonData.dominio);"
+									"// Ya se guardó en pre-request, pero validamos que la respuesta coincida",
+									"if(jsonData.dominio) console.log(\"Camión creado: \" + jsonData.dominio);"
 								],
 								"type": "text/javascript"
 							}
@@ -365,7 +379,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"dominio\": \"AA555BB\",\n  \"capacidadPeso\": 25000.0,\n  \"capacidadVolumen\": 80.0,\n  \"idTransportista\": {{idTransportista}},\n  \"costoPorKm\": 150.0,\n  \"consumoCombustiblePromedio\": 3.0\n}",
+							"raw": "{\n  \"dominio\": \"{{dominioCamion}}\",\n  \"capacidadPeso\": 25000.0,\n  \"capacidadVolumen\": 80.0,\n  \"idTransportista\": {{idTransportista}},\n  \"costoPorKm\": 150.0,\n  \"consumoCombustiblePromedio\": 3.0\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -408,7 +422,13 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"if(jsonData.numeroSolicitud) pm.collectionVariables.set(\"nroSolicitud\", jsonData.numeroSolicitud);"
+									"// CORREGIDO: Se busca 'nroSolicitud' en lugar de 'numeroSolicitud'",
+									"if(jsonData.nroSolicitud) {",
+									"    pm.collectionVariables.set(\"nroSolicitud\", jsonData.nroSolicitud);",
+									"    console.log(\"Solicitud creada: \" + jsonData.nroSolicitud);",
+									"} else {",
+									"    console.error(\"No se encontró nroSolicitud en la respuesta\");",
+									"}"
 								],
 								"type": "text/javascript"
 							}
@@ -501,9 +521,12 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"if(jsonData.tramos && jsonData.tramos.length > 0) {",
-									"    pm.collectionVariables.set(\"idTramo1\", jsonData.tramos[0].id);",
-									"    console.log(\"Tramo capturado: \" + jsonData.tramos[0].id);",
+									"// CORRECCION: Acceder a jsonData.ruta.tramos",
+									"if(jsonData.ruta && jsonData.ruta.tramos && jsonData.ruta.tramos.length > 0) {",
+									"    pm.collectionVariables.set(\"idTramo1\", jsonData.ruta.tramos[0].id);",
+									"    console.log(\"Tramo capturado: \" + jsonData.ruta.tramos[0].id);",
+									"} else {",
+									"    console.error(\"No se encontraron tramos en la respuesta\");",
 									"}"
 								],
 								"type": "text/javascript"

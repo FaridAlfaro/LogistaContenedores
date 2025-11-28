@@ -80,6 +80,7 @@ public class FlotaController {
     @PostMapping("/tramos/{idTramo}/iniciar")
     @PreAuthorize("hasRole('TRANSPORTISTA')")
     public ResponseEntity<TramoDTO> iniciarTramo(@PathVariable Long idTramo, @RequestBody IniciarTramoRequest request) {
+        @Valid
         TramoDTO tramoActualizado = tramoExecutionService.iniciarTramo(idTramo, request.getDominioCamion());
         return ResponseEntity.ok(tramoActualizado);
     }
@@ -87,7 +88,7 @@ public class FlotaController {
     @PostMapping("/tramos/{idTramo}/finalizar")
     @PreAuthorize("hasRole('TRANSPORTISTA')")
     public ResponseEntity<TramoDTO> finalizarTramo(@PathVariable Long idTramo,
-            @RequestBody FinalizarTramoRequest request) {
+            @Valid @RequestBody FinalizarTramoRequest request) {
         TramoDTO tramoActualizado = tramoExecutionService.finalizarTramo(idTramo, request.getDominioCamion(),
                 request.getKmRecorridos());
         return ResponseEntity.ok(tramoActualizado);
