@@ -67,12 +67,15 @@ public class RutaService {
         Double lonActual = lonOrigen;
 
         // Tramos hacia depósitos intermedios
+        Deposito depositoAnterior = null;
+
         for (Deposito deposito : depositosIntermedios) {
             OsrmDistanceResponse response = osrmClient.calcularDistancia(
                     latActual, lonActual, deposito.getLatitud(), deposito.getLongitud());
 
             Tramo tramo = new Tramo();
             tramo.setRuta(ruta);
+            tramo.setDepositoOrigen(depositoAnterior);
             tramo.setDepositoDestino(deposito);
             tramo.setTarifa(tarifa);
             tramo.setTipo(cantidadTramos == 0 ? "Origen-Deposito" : "Deposito-Deposito");
@@ -90,6 +93,7 @@ public class RutaService {
 
             latActual = deposito.getLatitud();
             lonActual = deposito.getLongitud();
+            depositoAnterior = deposito;
         }
 
         // Tramo final hacia destino
@@ -98,6 +102,8 @@ public class RutaService {
 
         Tramo tramoFinal = new Tramo();
         tramoFinal.setRuta(ruta);
+        tramoFinal.setDepositoOrigen(depositoAnterior);
+        tramoFinal.setDepositoDestino(null);
         tramoFinal.setTarifa(tarifa);
         tramoFinal.setTipo(depositosIntermedios.isEmpty() ? "Origen-Destino" : "Deposito-Destino");
         tramoFinal.setEstado(EstadoTramo.ESTIMADO);
