@@ -30,15 +30,11 @@ public class TramoExecutionService {
 
         // 2. Notificar a ms-logistica que el tramo está iniciando
         // ms-logistica calculará distancias usando coordenadas de sus propios depósitos
-        try {
-            TramoDTO tramoActualizado = logisticaApiClient.iniciarTramo(idTramo);
-            log.info("Tramo {} iniciado exitosamente en ms-logistica", idTramo);
-            return tramoActualizado;
-        } catch (Exception e) {
-            log.error("Error al llamar a ms-logistica para iniciar tramo {}: {}", idTramo, e.getMessage(), e);
-            // Esto es lo que causa el 500 genérico
-            throw new RuntimeException("Error en servicio de logística al iniciar tramo: " + e.getMessage(), e);
-        }
+        // 2. Notificar a ms-logistica que el tramo está iniciando
+        // ms-logistica calculará distancias usando coordenadas de sus propios depósitos
+        TramoDTO tramoActualizado = logisticaApiClient.iniciarTramo(idTramo);
+        log.info("Tramo {} iniciado exitosamente en ms-logistica", idTramo);
+        return tramoActualizado;
     }
 
     /**
@@ -54,15 +50,9 @@ public class TramoExecutionService {
                 idTramo, dominioCamion, kmRecorridos);
 
         // 1. Notificar a ms-logistica que el tramo está finalizando
-        TramoDTO tramoActualizado;
-        try {
-            tramoActualizado = logisticaApiClient.finalizarTramo(idTramo, kmRecorridos);
-            log.info("Tramo {} finalizado exitosamente en ms-logistica", idTramo);
-        } catch (Exception e) {
-            log.error("Error al llamar a ms-logistica para finalizar tramo {}: {}", idTramo, e.getMessage(), e);
-            // Esto es lo que causa el 500 genérico
-            throw new RuntimeException("Error en servicio de logística al finalizar tramo: " + e.getMessage(), e);
-        }
+        // 1. Notificar a ms-logistica que el tramo está finalizando
+        TramoDTO tramoActualizado = logisticaApiClient.finalizarTramo(idTramo, kmRecorridos);
+        log.info("Tramo {} finalizado exitosamente en ms-logistica", idTramo);
 
         // 2. Si exitoso en ms-logistica, liberar el camión localmente
         camionService.liberarCamion(dominioCamion, idTramo, kmRecorridos);
@@ -93,12 +83,7 @@ public class TramoExecutionService {
         camionService.asignarTramo(dominioCamion, idTramo);
 
         // 2. Notificar a ms-logistica
-        try {
-            logisticaApiClient.asignarCamion(idTramo, dominioCamion);
-        } catch (Exception e) {
-            log.error("Error al llamar a ms-logistica para asignar camión al tramo {}: {}", idTramo, e.getMessage(), e);
-            // Esto es lo que causa el 500 genérico
-            throw new RuntimeException("Error en servicio de logística al asignar camión: " + e.getMessage(), e);
-        }
+        // 2. Notificar a ms-logistica
+        logisticaApiClient.asignarCamion(idTramo, dominioCamion);
     }
 }
