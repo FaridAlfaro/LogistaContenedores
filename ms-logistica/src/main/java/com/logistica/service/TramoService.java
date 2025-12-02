@@ -1,5 +1,6 @@
 package com.logistica.service;
 
+import com.logistica.dto.EstadoTramoDTO;
 import com.logistica.model.*;
 import com.logistica.repository.TramoRepository;
 
@@ -27,6 +28,14 @@ public class TramoService {
 
     private final RabbitTemplate rabbitTemplate;
     private final FlotaApiClient flotaApiClient;
+
+    public EstadoTramoDTO obtenerEstadoTramo(Long id) {
+
+        Tramo t = tramoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Tramo no encontrado: " + id));
+
+        return new EstadoTramoDTO(t.getId(), t.getEstado());
+    }
 
     /**
      * Marca un tramo como INICIADO (llamado por MS Flota)

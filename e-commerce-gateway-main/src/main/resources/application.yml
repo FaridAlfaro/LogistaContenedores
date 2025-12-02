@@ -12,6 +12,11 @@ spring:
         locator:
           enabled: true # Habilitar descubrimiento
           lower-case-service-id: true # Nombres de servicio en minúscula
+      default-filters:
+        - name: SimpleRateLimit
+          args:
+            requests: 30       # máximo de requests
+            windowSeconds: 1  # por ventana de 10 segundos
       routes:
         - id: ms-solicitudes
           uri: lb://ms-solicitudes # "lb" = Load Balancer (Eureka)
