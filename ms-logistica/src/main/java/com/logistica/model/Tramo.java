@@ -47,8 +47,13 @@ public class Tramo {
     private double tiempoEstimado; // en segundos
     private double tiempoReal; // en segundos
 
-    private LocalDateTime fechaHoraInicio;
-    private LocalDateTime fechaHoraFin;
+    // Fechas planificadas por el operador
+    private LocalDateTime fechaHoraInicioEstimada;
+    private LocalDateTime fechaHoraFinEstimada;
+
+    // Fechas reales de ejecución
+    private LocalDateTime fechaHoraInicioReal;
+    private LocalDateTime fechaHoraFinReal;
 
     // Referencia a MS Flota
     private String dominioCamionRef;

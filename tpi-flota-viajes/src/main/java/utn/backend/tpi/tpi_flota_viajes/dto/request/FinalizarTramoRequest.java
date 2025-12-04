@@ -8,12 +8,6 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FinalizarTramoRequest {
-    /**
-     * Dominio del camión que finalizará el tramo
-     * Ejemplo: "AY 123 BC"
-     */
-    @NotBlank(message = "Dominio del camión es obligatorio")
-    private String dominioCamion;
 
     /**
      * Kilómetros recorridos durante el tramo

@@ -8,8 +8,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
-import jakarta.ws.rs.BadRequestException;
 import utn.backend.tpi.tpi_flota_viajes.clients.dto.TramoDTO;
+import utn.backend.tpi.tpi_flota_viajes.exception.BadRequestException;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+
 
 @Component
 public class LogisticaApiClient {
@@ -61,14 +65,56 @@ public class LogisticaApiClient {
     }
 
     public void asignarCamion(Long idTramo, String dominio) {
+        // Simulamos fechas (hoy + 2hs) para cumplir el contrato
+        Map<String, Object> body = Map.of(
+                "camionDominio", dominio,
+                "fechaHoraInicioEstimada", LocalDateTime.now().plusHours(2).toString(),
+                "fechaHoraFinEstimada", LocalDateTime.now().plusHours(6).toString()
+        );
+
         restClient.post()
-                .uri("/api/v1/tramos/{id}/asignar?dominio={dominio}", idTramo, dominio)
+                .uri("/api/v1/tramos/{id}/asignar-camion", idTramo)
+                .body(body)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
-                    throw new BadRequestException("Error en solicitud a Logística: " + response.getStatusText());
+                    throw new BadRequestException("Error en solicitud a Logística (Asignar): " + response.getStatusText());
                 })
                 .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
                     throw new RuntimeException("Error en servidor de Logística: " + response.getStatusText());
+                })
+                .toBodilessEntity();
+    }
+
+    /**
+     * Obtiene los detalles de un tramo específico
+     * Necesario para conocer qué camión está asignado
+     */
+    public TramoDTO obtenerTramo(Long idTramo) {
+        return restClient.get()
+                .uri("/api/v1/tramos/{id}/detalle", idTramo)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                    throw new BadRequestException("Tramo no encontrado: " + response.getStatusText());
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
+                    throw new RuntimeException("Error en servidor de Logística: " + response.getStatusText());
+                })
+                .body(TramoDTO.class);
+    }
+
+    //esto no
+    /**
+     * Libera un camión por timeout desde ms-logistica
+     */
+    public void liberarCamionPorTimeout(String dominio, Long tramoId) {
+        restClient.post()
+                .uri("/api/flota/camiones/{dominio}/timeout?tramoId={tramoId}", dominio, tramoId)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                    throw new BadRequestException("Error liberando camión por timeout: " + response.getStatusText());
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
+                    throw new RuntimeException("Error en servidor de Flota: " + response.getStatusText());
                 })
                 .toBodilessEntity();
     }

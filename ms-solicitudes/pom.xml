@@ -84,12 +84,7 @@
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-admin-client</artifactId>
-			<version>22.0.1</version>
-		</dependency>
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>resteasy-client</artifactId>
-			<version>6.2.4.Final</version>
+			<version>22.0.5</version>
 		</dependency>
 	</dependencies>
 	<dependencyManagement>

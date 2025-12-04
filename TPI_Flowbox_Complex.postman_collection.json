@@ -696,7 +696,7 @@
         },
         {
             "key": "clientSecret",
-            "value": "RjFJc8RKqgfjZjeRBvzGkgcJhsngGLNQ",
+            "value": "backend-secret",
             "type": "string"
         },
         {

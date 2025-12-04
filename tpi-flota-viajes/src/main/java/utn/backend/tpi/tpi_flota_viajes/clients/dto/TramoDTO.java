@@ -16,7 +16,11 @@ public class TramoDTO {
     private Double costoReal;
     private Double tiempoEstimado;
     private Double tiempoReal;
-    private LocalDateTime fechaHoraInicio;
-    private LocalDateTime fechaHoraFin;
-    // ... otros campos que quieras recibir de ms-logistica
+    // Fechas planificadas
+    private LocalDateTime fechaHoraInicioEstimada;
+    private LocalDateTime fechaHoraFinEstimada;
+
+    // Fechas reales de ejecución
+    private LocalDateTime fechaHoraInicioReal;
+    private LocalDateTime fechaHoraFinReal;
 }

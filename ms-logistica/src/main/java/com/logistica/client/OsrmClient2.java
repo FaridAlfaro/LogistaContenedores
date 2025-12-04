@@ -23,9 +23,7 @@ public class OsrmClient2 {
         try {
             log.info("Calculando distancia: ({}, {}) -> ({}, {})", lat1, lon1, lat2, lon2);
 
-            // Se agrega &alternatives=true para obtener rutas alternativas, aunque este
-            // método devuelve la mejor (índice 0)
-            String uri = String.format("/route/v1/driving/%.6f,%.6f;%.6f,%.6f?overview=false&alternatives=true",
+            String uri = String.format("/route/v1/driving/%.6f,%.6f;%.6f,%.6f",
                     lon1, lat1, lon2, lat2);
 
             OsrmDistanceResponse response = restClient.get()
