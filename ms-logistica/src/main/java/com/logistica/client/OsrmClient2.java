@@ -40,4 +40,44 @@ public class OsrmClient2 {
             throw new RuntimeException("Error calculando distancia con OSRM: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Obtiene una lista de rutas alternativas entre dos puntos.
+     * Cada elemento de la lista es un OsrmDistanceResponse que contiene una sola
+     * ruta.
+     */
+    public java.util.List<OsrmDistanceResponse> getAlternativeRoutes(Double lat1, Double lon1, Double lat2,
+            Double lon2) {
+        try {
+            log.info("Buscando rutas alternativas: ({}, {}) -> ({}, {})", lat1, lon1, lat2, lon2);
+
+            String uri = String.format("/route/v1/driving/%.6f,%.6f;%.6f,%.6f?overview=false&alternatives=3",
+                    lon1, lat1, lon2, lat2);
+
+            OsrmDistanceResponse fullResponse = restClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(OsrmDistanceResponse.class);
+
+            java.util.List<OsrmDistanceResponse> resultList = new java.util.ArrayList<>();
+
+            if (fullResponse != null && fullResponse.getRoutes() != null) {
+                log.info("OSRM devolvió {} rutas", fullResponse.getRoutes().size());
+                for (OsrmDistanceResponse.Route route : fullResponse.getRoutes()) {
+                    OsrmDistanceResponse singleRouteResponse = new OsrmDistanceResponse();
+                    singleRouteResponse.setRoutes(java.util.Collections.singletonList(route));
+                    resultList.add(singleRouteResponse);
+                }
+            } else {
+                log.warn("OSRM devolvió respuesta nula o sin rutas");
+            }
+
+            log.info("Se encontraron {} rutas alternativas", resultList.size());
+            return resultList;
+
+        } catch (Exception e) {
+            log.error("Error al obtener rutas alternativas de OSRM", e);
+            throw new RuntimeException("Error obteniendo rutas alternativas: " + e.getMessage(), e);
+        }
+    }
 }
