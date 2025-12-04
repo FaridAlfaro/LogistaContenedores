@@ -16,7 +16,7 @@ public class CamionMapper {
                 .estado(entity.getEstado().toString())
                 .transportistaId(getTransportistaId(entity))  // ← Helper method
                 .transportistaNombre(getTransportistaNombre(entity))  // ← Helper method
-                .tramoEnCursoId(entity.getIdTramoActual())
+                .tramoEnCursoId(entity.getTramoEnEjecucion())
                 .build();
     }
 

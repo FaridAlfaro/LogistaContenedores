@@ -6,9 +6,6 @@ import com.logistica.dto.response.ErrorResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import lombok.extern.slf4j.Slf4j;
-import jakarta.ws.rs.ProcessingException;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.NotAuthorizedException;
 
 @RestControllerAdvice
 @Slf4j

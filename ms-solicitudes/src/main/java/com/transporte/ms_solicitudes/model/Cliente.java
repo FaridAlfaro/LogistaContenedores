@@ -1,6 +1,8 @@
 package com.transporte.ms_solicitudes.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,16 +15,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Cliente {
-
     @Id
-    @Column(name = "id_cliente")
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cliente_seq")
-    @SequenceGenerator(name = "cliente_seq", sequenceName = "cliente_seq", allocationSize = 1)
-    private Long id; // ID Numérico Autoincremental
-
-    @Column(nullable = false)
+    private String idCliente; // Puede ser el mismo ID que en Keycloak o un CUIT/DNI
     private String nombre;
-
-    @Column(unique = true, nullable = false)
-    private String email; // El email es único y sirve para login/busqueda
+    private String email;
 }

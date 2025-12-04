@@ -37,31 +37,27 @@ public class SolicitudesControllerTest {
 
         @Test
         public void testCrearSolicitud() throws Exception {
-                SolicitudRequestDTO.Localizacion origen = new SolicitudRequestDTO.Localizacion(-34.6037, -58.3816);
-                SolicitudRequestDTO.Localizacion destino = new SolicitudRequestDTO.Localizacion(-31.4201, -64.1888);
-
-                SolicitudRequestDTO req = new SolicitudRequestDTO(
-                                "cliente@example.com", // email
-                                "password-1", // password
-                                "ELECTRONICA", // tipoCarga
-                                500.0, // peso
-                                false, // refrigerado
-                                origen,
-                                destino);
+                com.transporte.ms_solicitudes.api.dto.SolicitudRequestDTO req = new com.transporte.ms_solicitudes.api.dto.SolicitudRequestDTO(
+                                "cliente-1",
+                                "contenedor-1",
+                                new com.transporte.ms_solicitudes.api.dto.SolicitudRequestDTO.Localizacion("Origen", 0.0, 0.0),
+                                new com.transporte.ms_solicitudes.api.dto.SolicitudRequestDTO.Localizacion("Destino", 10.0, 10.0));
 
                 Solicitud solicitud = Solicitud.builder()
-                                .nroSolicitud(12345678L)
-                                .estado(EstadoSolicitud.CREADA)
+                                .nroSolicitud("12345678")
+                                .estado(EstadoSolicitud.BORRADOR)
                                 .build();
 
-                when(service.crearSolicitud(req)).thenReturn(solicitud);
+                when(service.crearSolicitud(anyString(), anyString(), anyDouble(), anyDouble(), anyDouble(),
+                                anyDouble()))
+                                .thenReturn(solicitud);
 
                 mockMvc.perform(post("/api/v1/solicitudes")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(req)))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.nroSolicitud").value(12345678))
-                                .andExpect(jsonPath("$.estado").value("CREADA"));
+                                .andExpect(jsonPath("$.nroSolicitud").value("12345678"))
+                                .andExpect(jsonPath("$.estado").value("BORRADOR"));
         }
 
         @Test
@@ -75,11 +71,11 @@ public class SolicitudesControllerTest {
         @Test
         public void testAceptarSolicitud() throws Exception {
                 Solicitud solicitud = Solicitud.builder()
-                                .nroSolicitud(12345678L)
+                                .nroSolicitud("12345678")
                                 .estado(EstadoSolicitud.ACEPTADA)
                                 .build();
 
-                when(service.aceptarSolicitud(12345678L)).thenReturn(Optional.of(solicitud));
+                when(service.aceptarSolicitud("12345678")).thenReturn(Optional.of(solicitud));
 
                 mockMvc.perform(put("/api/v1/solicitudes/12345678/aceptar"))
                                 .andExpect(status().isOk())

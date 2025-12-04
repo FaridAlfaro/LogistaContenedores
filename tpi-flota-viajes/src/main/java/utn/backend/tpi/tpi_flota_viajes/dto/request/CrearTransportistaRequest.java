@@ -2,6 +2,7 @@ package utn.backend.tpi.tpi_flota_viajes.dto.request;
 
 import jakarta.validation.constraints.*;
 import lombok.*;
+import utn.backend.tpi.tpi_flota_viajes.validation.ValidContacto;
 
 @Data
 @Builder
@@ -17,10 +18,6 @@ public class CrearTransportistaRequest {
     private String licencia;
 
     @NotBlank(message = "Contacto es obligatorio")
-    @Email(message = "El contacto debe ser un email válido")
+    @ValidContacto  // ← Usar la anotación custom
     private String contacto;
-
-    @NotBlank(message = "Password es obligatorio")
-    @Size(min = 6, max = 20, message = "Password debe tener entre 6 y 20 caracteres")
-    private String password;
 }

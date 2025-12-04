@@ -1,6 +1,5 @@
 package utn.backend.tpi.tpi_flota_viajes.dto.mapper;
 
-import utn.backend.tpi.tpi_flota_viajes.dto.request.CrearTransportistaRequest;
 import utn.backend.tpi.tpi_flota_viajes.dto.response.TransportistaResponse;
 import utn.backend.tpi.tpi_flota_viajes.model.Transportista;
 
@@ -13,15 +12,6 @@ public class TransportistaMapper {
                 .licencia(entity.getLicencia())
                 .contacto(entity.getContacto())
                 .activo(entity.getActivo())
-                .build();
-    }
-
-    public static Transportista toEntity(CrearTransportistaRequest dto) {
-        return Transportista.builder()
-                .nombre(dto.getNombre())
-                .licencia(dto.getLicencia())
-                .contacto(dto.getContacto())
-                .activo(true)
                 .build();
     }
 }

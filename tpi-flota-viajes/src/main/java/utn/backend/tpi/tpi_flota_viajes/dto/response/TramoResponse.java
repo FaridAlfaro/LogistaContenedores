@@ -9,10 +9,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class TramoResponse {
     private Long idTramo;
-    private String estado; // ESTIMADO, ASIGNADO, INICIADO, FINALIZADO
-    private LocalDateTime fechaHoraInicioReal;
-    private LocalDateTime fechaHoraFinReal;
+    private String estado;  // ESTIMADO, ASIGNADO, INICIADO, FINALIZADO
+    private LocalDateTime fechaHoraInicio;
+    private LocalDateTime fechaHoraFin;
     private Double kmRecorridos;
     private String dominioCamion;
-    private Long camionId;
 }

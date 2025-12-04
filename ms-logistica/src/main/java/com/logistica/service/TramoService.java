@@ -2,22 +2,20 @@ package com.logistica.service;
 
 import com.logistica.model.*;
 import com.logistica.repository.TramoRepository;
-import com.logistica.repository.RutaRepository;
-import com.logistica.client.OsrmClient2;
+
 import com.logistica.client.FlotaApiClient;
-import com.logistica.event.TramoIniciado;
-import com.logistica.event.TramoFinalizado;
 import com.logistica.exception.TramoNotFoundException;
 import com.logistica.exception.RutaNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import com.logistica.client.dto.CamionInfo;
+import com.logistica.client.SolicitudesApiClient;
 
 @Service
 @RequiredArgsConstructor
@@ -25,19 +23,18 @@ import java.util.Optional;
 public class TramoService {
 
     private final TramoRepository tramoRepository;
-    private final RutaRepository rutaRepository;
-    private final OsrmClient2 osrmClient;
-    private final RabbitTemplate rabbitTemplate;
     private final FlotaApiClient flotaApiClient;
+    private final SolicitudesApiClient solicitudesApiClient;
 
     /**
      * Marca un tramo como INICIADO (llamado por MS Flota)
-     * Publica evento a RabbitMQ para MS Solicitudes
-     * 
+     *
      * @return El tramo actualizado
      */
     @Transactional
     public Tramo marcarTramoIniciado(Long idTramo) {
+        validarSecuenciaTramos(idTramo);
+
         log.info("Marcando tramo {} como EN CURSO", idTramo);
 
         Tramo tramo = tramoRepository.findById(idTramo)
@@ -49,25 +46,12 @@ public class TramoService {
         }
 
         tramo.setEstado(EstadoTramo.EN_CURSO);
-        tramo.setFechaHoraInicio(LocalDateTime.now());
+        tramo.setFechaHoraInicioReal(LocalDateTime.now());
         tramoRepository.save(tramo);
 
         log.info("Tramo {} ahora está EN CURSO, publicando evento", idTramo);
 
-        // Publica evento a RabbitMQ para MS Solicitudes
-        try {
-            TramoIniciado evento = new TramoIniciado(
-                    idTramo,
-                    ruta.getNroSolicitudRef(),
-                    LocalDateTime.now(),
-                    "INICIADO");
-
-            rabbitTemplate.convertAndSend("solicitudes.exchange", "tramo.iniciado", evento);
-            log.info("Evento TramoIniciado publicado para solicitud: {}", ruta.getNroSolicitudRef());
-        } catch (Exception e) {
-            log.error("Error al publicar evento TramoIniciado para tramo {}: {}", idTramo, e.getMessage());
-            // No relanzamos la excepción para no revertir la transacción de base de datos
-        }
+        solicitudesApiClient.notificarTramoIniciado(ruta.getNroSolicitudRef(), idTramo);
 
         return tramo;
     }
@@ -91,6 +75,8 @@ public class TramoService {
             throw new RutaNotFoundException(null);
         }
 
+        tramo.setFechaHoraFinReal(LocalDateTime.now());
+
         // Calcular costo real y tiempo real
         double costoReal = calcularCostoReal(tramo, kmRecorridos);
         double tiempoReal = calcularTiempoReal(tramo);
@@ -99,33 +85,34 @@ public class TramoService {
         tramo.setKmRecorridos(kmRecorridos);
         tramo.setCostoReal(costoReal);
         tramo.setTiempoReal(tiempoReal);
-        tramo.setFechaHoraFin(LocalDateTime.now());
-        tramoRepository.save(tramo);
 
+        tramoRepository.save(tramo);
         log.info("Tramo {} finalizado. Costo real: ${}, Tiempo real: {}s",
                 idTramo, costoReal, tiempoReal);
 
-        // Publica evento a RabbitMQ para MS Solicitudes
-        try {
-            TramoFinalizado evento = new TramoFinalizado(
-                    idTramo,
-                    ruta.getNroSolicitudRef(),
-                    kmRecorridos,
-                    costoReal,
-                    tiempoReal,
-                    LocalDateTime.now(),
-                    "FINALIZADO");
-
-            rabbitTemplate.convertAndSend("solicitudes.exchange", "tramo.finalizado", evento);
-            log.info("Evento TramoFinalizado publicado para solicitud: {}", ruta.getNroSolicitudRef());
-
-            // Verificar si todos los tramos de la ruta están finalizados
-            verificarYActualizarEstadoRuta(ruta);
-        } catch (Exception e) {
-            log.error("Error al publicar evento TramoFinalizado o actualizar ruta para tramo {}: {}", idTramo,
-                    e.getMessage());
-            // No relanzamos la excepción para no revertir la transacción de base de datos
+        // LÓGICA UBICACIÓN
+        String ubicacionFin;
+        boolean esDestinoFinal;
+        if (tramo.getDepositoDestino() != null) {
+            ubicacionFin = tramo.getDepositoDestino().getNombre();
+            esDestinoFinal = false;
+        } else {
+            ubicacionFin = "Destino Final"; // Ojo: Si tienes la direccion textual en la solicitud, idealmente usarla, pero Logistica no la tiene. "Destino Final" es aceptable.
+            esDestinoFinal = true;
         }
+
+        // ...
+
+        // CORREGIDO: Pasar kmRecorridos
+        solicitudesApiClient.notificarTramoFinalizado(
+                ruta.getNroSolicitudRef(),
+                idTramo,
+                kmRecorridos,
+                costoReal,
+                tiempoReal,
+                ubicacionFin,
+                esDestinoFinal
+        );
 
         return tramo;
     }
@@ -152,18 +139,7 @@ public class TramoService {
             log.info("Todos los tramos de la ruta {} están finalizados. Costo total: ${}, Tiempo total: {}s",
                     ruta.getId(), costoTotalReal, tiempoTotalReal);
 
-            // Publicar evento para actualizar solicitud a ENTREGADA
-            TramoFinalizado eventoFinal = new TramoFinalizado(
-                    null, // idTramo null indica que es el evento final de toda la ruta
-                    ruta.getNroSolicitudRef(),
-                    0, // kmRecorridos no aplica
-                    costoTotalReal,
-                    tiempoTotalReal,
-                    LocalDateTime.now(),
-                    "ENTREGADA");
-
-            rabbitTemplate.convertAndSend("solicitudes.exchange", "ruta.completada", eventoFinal);
-            log.info("Evento de ruta completada publicado para solicitud: {}", ruta.getNroSolicitudRef());
+            solicitudesApiClient.notificarRutaCompletada(ruta.getNroSolicitudRef());
         }
     }
 
@@ -177,27 +153,39 @@ public class TramoService {
         Tarifa tarifa = tramo.getTarifa();
         double costoTotal = 0.0;
 
-        // 1. Costo por km del camión específico
+        // 1. CÁLCULO DE COSTO DE TRANSPORTE
         if (tramo.getDominioCamionRef() != null && !tramo.getDominioCamionRef().isEmpty()) {
             try {
-                FlotaApiClient.CamionInfo camion = flotaApiClient.obtenerCamionPorDominio(tramo.getDominioCamionRef());
-                double costoPorKmCamion = kmRecorridos * camion.getCostoPorKm();
-                costoTotal += costoPorKmCamion;
-                log.debug("Costo por km del camión {}: ${}", tramo.getDominioCamionRef(), costoPorKmCamion);
+                CamionInfo camion = flotaApiClient.obtenerCamionPorDominio(tramo.getDominioCamionRef());
 
-                // 2. Costo de combustible
-                // Litros consumidos = km * (consumo del camión en L/km)
-                double litrosConsumidos = kmRecorridos * (camion.getConsumoCombustiblePromedio() / 100.0); // convertir
-                                                                                                           // de L/100km
-                                                                                                           // a L/km
+                // Calcular litros: (L/100km / 100) * km
+                double litrosConsumidos = kmRecorridos * (camion.getConsumoCombustiblePromedio() / 100.0);
+
+                // Costo base del combustible
                 double costoCombustible = litrosConsumidos * tarifa.getCostoLitroCombustible();
-                costoTotal += costoCombustible;
-                log.debug("Costo de combustible: {} L * ${}/L = ${}", litrosConsumidos,
-                        tarifa.getCostoLitroCombustible(), costoCombustible);
+
+                // --- CAMBIO AQUÍ: Usar valor dinámico de la Tarifa ---
+
+                // Obtenemos el porcentaje (ej: 30.0) o usamos 0.0 si es nulo
+                double porcentaje = tarifa.getPorcentajeRecargo() != null ?
+                        tarifa.getPorcentajeRecargo() : 0.0;
+
+                // Factor multiplicador: Si es 30%, factor es 1.30
+                double factor = 1 + (porcentaje / 100.0);
+
+                double costoTransporte = costoCombustible * factor;
+                // -----------------------------------------------------
+
+                costoTotal += costoTransporte;
+
+                log.info("Costo transporte: Combustible ${} + {}% recargo = ${}",
+                        String.format("%.2f", costoCombustible),
+                        porcentaje,
+                        String.format("%.2f", costoTransporte));
             } catch (Exception e) {
                 log.warn("No se pudo obtener información del camión {}, usando tarifa base: {}",
                         tramo.getDominioCamionRef(), e.getMessage());
-                // Fallback: usar tarifa base si no se puede obtener el camión
+                 // Fallback: usar tarifa base si no se puede obtener el camión
                 costoTotal += kmRecorridos * tarifa.getValorKMBase();
             }
         } else {
@@ -212,20 +200,20 @@ public class TramoService {
         // Por ahora, si el tramo termina en un depósito, calculamos estadía mínima de 1
         // día
         // La estadía completa se calculará cuando el siguiente tramo inicie
-        if (tramo.getDepositoDestino() != null && tramo.getFechaHoraFin() != null) {
+        if (tramo.getDepositoDestino() != null && tramo.getFechaHoraFinReal() != null) {
             // Buscar el siguiente tramo que sale de este depósito
             List<Tramo> tramosRuta = tramoRepository.findByRutaId(tramo.getRuta().getId());
             Tramo siguienteTramo = tramosRuta.stream()
                     .filter(t -> t.getDepositoOrigen() != null &&
                             t.getDepositoOrigen().getId().equals(tramo.getDepositoDestino().getId()) &&
-                            t.getFechaHoraInicio() != null)
+                            t.getFechaHoraInicioReal() != null)
                     .findFirst()
                     .orElse(null);
 
-            if (siguienteTramo != null && siguienteTramo.getFechaHoraInicio() != null) {
+            if (siguienteTramo != null && siguienteTramo.getFechaHoraInicioReal() != null) {
                 // Calcular días entre fin de este tramo e inicio del siguiente
-                long diasEstadia = ChronoUnit.DAYS.between(tramo.getFechaHoraFin(),
-                        siguienteTramo.getFechaHoraInicio());
+                long diasEstadia = ChronoUnit.DAYS.between(tramo.getFechaHoraFinReal(),
+                        siguienteTramo.getFechaHoraInicioReal());
                 if (diasEstadia > 0) {
                     double costoEstadia = diasEstadia * tramo.getDepositoDestino().getCostoEstadiaDiario();
                     costoTotal += costoEstadia;
@@ -233,7 +221,7 @@ public class TramoService {
                             tramo.getDepositoDestino().getNombre(), diasEstadia,
                             tramo.getDepositoDestino().getCostoEstadiaDiario(), costoEstadia);
                 }
-            } else if (tramo.getFechaHoraFin() != null) {
+            } else if (tramo.getFechaHoraFinReal() != null) {
                 // Si no hay siguiente tramo aún, asumir estadía mínima de 1 día
                 // Esto se ajustará cuando el siguiente tramo inicie
                 double costoEstadia = 1 * tramo.getDepositoDestino().getCostoEstadiaDiario();
@@ -252,24 +240,46 @@ public class TramoService {
      * Calcula el tiempo real del tramo
      */
     private double calcularTiempoReal(Tramo tramo) {
-        if (tramo.getFechaHoraInicio() == null) {
+        if (tramo.getFechaHoraInicioReal() == null) {
             return 0;
         }
-        LocalDateTime fin = LocalDateTime.now();
+
+        // Usar fecha fin real si está disponible, sino la hora actual
+        LocalDateTime fin = tramo.getFechaHoraFinReal() != null ?
+                           tramo.getFechaHoraFinReal() : LocalDateTime.now();
 
         return java.time.temporal.ChronoUnit.SECONDS.between(
-                tramo.getFechaHoraInicio(),
+                tramo.getFechaHoraInicioReal(),
                 fin);
     }
 
     @Transactional
-    public void asignarCamion(Long idTramo, String dominio) {
+    public void asignarCamionConPlanificacion(Long idTramo, String dominio,
+                                            LocalDateTime fechaInicioEstimada,
+                                            LocalDateTime fechaFinEstimada) {
         Tramo tramo = tramoRepository.findById(idTramo)
                 .orElseThrow(() -> new TramoNotFoundException(idTramo));
 
+        // 1. Actualizar tramo en MS-LOGÍSTICA
         tramo.setDominioCamionRef(dominio);
         tramo.setEstado(EstadoTramo.ASIGNADO);
+        tramo.setFechaHoraInicioEstimada(fechaInicioEstimada);
+        tramo.setFechaHoraFinEstimada(fechaFinEstimada);
+
         tramoRepository.save(tramo);
+        log.info("Camión {} asignado al tramo {}. Planificado para: {} - {}",
+                dominio, idTramo, fechaInicioEstimada, fechaFinEstimada);
+
+        // 2. Notificar a MS-FLOTA de la asignación
+        try {
+            notificarAsignacionAFlota(dominio, idTramo);
+            log.info("MS-Flota notificado exitosamente de asignación: {} -> {}", dominio, idTramo);
+        } catch (Exception e) {
+            log.error("Error notificando asignación a MS-Flota para camión {} y tramo {}: {}",
+                     dominio, idTramo, e.getMessage());
+            // Relanzar excepción para hacer rollback de la transacción
+            throw new RuntimeException("Error sincronizando con MS-Flota: " + e.getMessage(), e);
+        }
     }
 
     public List<Tramo> obtenerTramosPendientes() {
@@ -283,5 +293,158 @@ public class TramoService {
 
     public List<Tramo> listarTramos() {
         return tramoRepository.findAll();
+    }
+
+    /**
+     * Validar secuencia de tramos antes de iniciar
+     */
+    public void validarSecuenciaTramos(Long tramoId) {
+        Tramo tramo = tramoRepository.findById(tramoId)
+            .orElseThrow(() -> new TramoNotFoundException(tramoId));
+
+        List<Tramo> tramosRuta = tramoRepository.findByRutaId(tramo.getRuta().getId());
+
+        // Ordenar tramos por ID (asumiendo que IDs mayores = tramos posteriores)
+        tramosRuta.sort((t1, t2) -> t1.getId().compareTo(t2.getId()));
+
+        // Verificar que tramos anteriores estén finalizados
+        boolean tramoEncontrado = false;
+        for (Tramo t : tramosRuta) {
+            if (t.getId().equals(tramoId)) {
+                tramoEncontrado = true;
+                break;
+            }
+
+            if (t.getEstado() != EstadoTramo.FINALIZADO) {
+                throw new IllegalStateException(
+                    "Debe finalizar el tramo " + t.getId() + " antes de iniciar el tramo " + tramoId);
+            }
+        }
+
+        if (!tramoEncontrado) {
+            throw new TramoNotFoundException(tramoId);
+        }
+
+        log.info("Secuencia de tramos validada correctamente para tramo {}", tramoId);
+    }
+
+    /**
+     * Asignar múltiples tramos consecutivos
+     */
+    @Transactional
+    public void asignarTramosConsecutivos(String dominio, List<Long> tramoIds,
+                                         List<LocalDateTime> fechasInicio,
+                                         List<LocalDateTime> fechasFin) {
+
+        if (tramoIds.size() != fechasInicio.size() || tramoIds.size() != fechasFin.size()) {
+            throw new IllegalArgumentException("Las listas de tramos y fechas deben tener el mismo tamaño");
+        }
+
+        // Validar que todas las fechas sean secuenciales y coherentes
+        validarSecuenciaFechas(fechasInicio, fechasFin);
+
+        // Asignar cada tramo individualmente
+        for (int i = 0; i < tramoIds.size(); i++) {
+            asignarCamionConPlanificacion(tramoIds.get(i), dominio,
+                fechasInicio.get(i), fechasFin.get(i));
+        }
+
+        log.info("Camión {} asignado a {} tramos consecutivos", dominio, tramoIds.size());
+    }
+
+    /**
+     * Reasignar tramo liberando camión anterior
+     */
+    @Transactional
+    // CAMBIO: Ahora devuelve 'Tramo' en lugar de 'void'
+    public Tramo reasignarTramo(Long tramoId, String nuevoDominio,
+                                LocalDateTime nuevaFechaInicio,
+                                LocalDateTime nuevaFechaFin) {
+
+        Tramo tramo = tramoRepository.findById(tramoId)
+                .orElseThrow(() -> new TramoNotFoundException(tramoId));
+
+        // Validación de estado (para no cambiar choferes en movimiento)
+        if (tramo.getEstado() == EstadoTramo.EN_CURSO || tramo.getEstado() == EstadoTramo.FINALIZADO) {
+            throw new IllegalStateException("No se puede reasignar un tramo que está " + tramo.getEstado());
+        }
+
+        String dominioAnterior = tramo.getDominioCamionRef();
+
+        // Actualizar datos
+        tramo.setDominioCamionRef(nuevoDominio);
+        tramo.setEstado(EstadoTramo.ASIGNADO);
+        tramo.setFechaHoraInicioEstimada(nuevaFechaInicio);
+        tramo.setFechaHoraFinEstimada(nuevaFechaFin);
+
+        // Guardar y capturar el objeto actualizado
+        Tramo tramoActualizado = tramoRepository.save(tramo);
+
+        log.info("Tramo {} reasignado del camión {} al camión {}", tramoId, dominioAnterior, nuevoDominio);
+
+        // Notificar a MS-FLOTA (sin cambios aquí)
+        try {
+            notificarReasignacionAFlota(dominioAnterior, nuevoDominio, tramoId);
+        } catch (Exception e) {
+            log.error("Error notificando reasignación a MS-Flota: {}", e.getMessage());
+            throw new RuntimeException("Error sincronizando con MS-Flota: " + e.getMessage(), e);
+        }
+
+        // CAMBIO: Retornar el objeto
+        return tramoActualizado;
+    }
+
+    /**
+     * Obtener tramos por ruta (para validaciones de secuencia)
+     */
+    public List<Tramo> obtenerTramosPorRuta(Long rutaId) {
+        return tramoRepository.findByRutaId(rutaId);
+    }
+
+    // Métodos helper privados
+    private void validarSecuenciaFechas(List<LocalDateTime> fechasInicio, List<LocalDateTime> fechasFin) {
+        for (int i = 0; i < fechasInicio.size(); i++) {
+            LocalDateTime inicio = fechasInicio.get(i);
+            LocalDateTime fin = fechasFin.get(i);
+
+            // Validar que inicio < fin para cada tramo
+            if (inicio.isAfter(fin) || inicio.equals(fin)) {
+                throw new IllegalArgumentException(
+                    "Fecha de inicio debe ser anterior a fecha de fin para tramo " + (i + 1));
+            }
+
+            // Validar que el tramo actual inicie después del anterior termine
+            if (i > 0) {
+                LocalDateTime finAnterior = fechasFin.get(i - 1);
+                if (inicio.isBefore(finAnterior)) {
+                    throw new IllegalArgumentException(
+                        "El tramo " + (i + 1) + " no puede iniciar antes de que termine el tramo " + i);
+                }
+            }
+        }
+    }
+
+    /**
+     * Notifica a MS-FLOTA sobre la asignación de un tramo a un camión
+     */
+    private void notificarAsignacionAFlota(String dominio, Long tramoId) {
+        try {
+            flotaApiClient.notificarAsignacionMultiple(dominio, List.of(tramoId));
+        } catch (Exception e) {
+            log.error("Error en comunicación con MS-Flota: {}", e.getMessage());
+            throw e; // Propagar para rollback
+        }
+    }
+
+    /**
+     * Notifica a MS-FLOTA sobre reasignación de tramo
+     */
+    private void notificarReasignacionAFlota(String dominioAnterior, String dominioNuevo, Long tramoId) {
+        try {
+            flotaApiClient.notificarReasignacion(dominioAnterior, dominioNuevo, tramoId);
+        } catch (Exception e) {
+            log.error("Error en reasignación con MS-Flota: {}", e.getMessage());
+            throw e; // Propagar para rollback
+        }
     }
 }

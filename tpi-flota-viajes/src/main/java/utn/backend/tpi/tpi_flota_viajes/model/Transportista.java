@@ -20,13 +20,11 @@ public class Transportista {
     @Column(nullable = false)
     private String nombre;
     private String licencia;
-
+    
     @Column(unique = true, nullable = false)
     private String contacto; // Email o teléfono
 
-    @Builder.Default
-    @Column(nullable = false)
-    private Boolean activo = true; // Campo requerido por tu CamionService
+    private Boolean activo; // Campo requerido por tu CamionService
 
     @OneToMany(mappedBy = "transportista", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Camion> camiones;
