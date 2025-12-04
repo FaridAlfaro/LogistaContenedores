@@ -1,5 +1,6 @@
 package com.transporte.ms_solicitudes.service;
 
+import com.transporte.ms_solicitudes.api.EstadoContenedorDTO;
 import com.transporte.ms_solicitudes.data.ClienteRepository;
 import com.transporte.ms_solicitudes.data.ContenedorRepository;
 import com.transporte.ms_solicitudes.data.SolicitudRepository;
@@ -74,6 +75,12 @@ public class SolicitudesService {
         return solicitudRepository.findAll();
     }
 
+    public EstadoSolicitud obtenerEstadoSolicitud(String nroSolicitud) {
+        Solicitud s = solicitudRepository.findById(nroSolicitud)
+                .orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada: " + nroSolicitud));
+        return s.getEstado();
+    }
+
     @Transactional
     public Optional<Solicitud> aceptarSolicitud(String nro) {
         return solicitudRepository.findById(nro).map(s -> {
@@ -81,4 +88,5 @@ public class SolicitudesService {
             return solicitudRepository.save(s);
         });
     }
+
 }

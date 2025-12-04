@@ -1,5 +1,7 @@
 package com.transporte.ms_solicitudes.api;
 
+import com.transporte.ms_solicitudes.model.EstadoContenedor;
+
 record SolicitudRequestDTO(
     String idCliente,
     String idContenedor,
@@ -22,4 +24,7 @@ record TrackingDTO(
     String ETA
 ) {}
 
-
+public record EstadoContenedorDTO(
+    String id,
+    EstadoContenedor estado
+) {}

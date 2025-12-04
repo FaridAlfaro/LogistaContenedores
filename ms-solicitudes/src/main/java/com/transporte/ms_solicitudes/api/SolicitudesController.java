@@ -1,6 +1,8 @@
 package com.transporte.ms_solicitudes.api;
 
+import com.transporte.ms_solicitudes.model.EstadoSolicitud;
 import com.transporte.ms_solicitudes.model.Solicitud;
+import com.transporte.ms_solicitudes.service.SolicitudesService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 
 public class SolicitudesController {
-    private final com.transporte.ms_solicitudes.service.SolicitudesService service;
+    private final SolicitudesService service;
 
     @PostMapping
     public ResponseEntity<SolicitudResponseDTO> crear(@RequestBody SolicitudRequestDTO req) {
@@ -62,6 +64,12 @@ public class SolicitudesController {
         return service.aceptarSolicitud(nro)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/estado")
+    public ResponseEntity<String> estadoSolicitud(@PathVariable("id") String id) {
+        EstadoSolicitud estado = service.obtenerEstadoSolicitud(id);
+        return ResponseEntity.ok(estado.name());
     }
 
 }

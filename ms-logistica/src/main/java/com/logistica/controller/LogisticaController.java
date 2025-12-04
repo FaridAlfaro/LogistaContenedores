@@ -1,5 +1,6 @@
 package com.logistica.controller;
 
+import com.logistica.dto.EstadoTramoDTO;
 import com.logistica.dto.request.PlanificarRutaRequest;
 import com.logistica.dto.response.CalculoResponse;
 import com.logistica.dto.response.DistanciaResponse;
@@ -185,4 +186,10 @@ public class LogisticaController {
     public ResponseEntity<List<Tramo>> listarTramos() {
         return ResponseEntity.ok(tramoService.listarTramos());
     }
+
+    @GetMapping("/{id}/estado")
+    public ResponseEntity<EstadoTramoDTO> estadoTramo(@PathVariable Long id) {
+        return ResponseEntity.ok(tramoService.obtenerEstadoTramo(id));
+    }
+
 }

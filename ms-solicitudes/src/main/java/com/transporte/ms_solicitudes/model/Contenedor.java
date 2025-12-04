@@ -1,8 +1,6 @@
 package com.transporte.ms_solicitudes.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +15,9 @@ import lombok.NoArgsConstructor;
 public class Contenedor {
     @Id
     private String idContenedor; // Identificación única
+
+    @Enumerated(EnumType.STRING)
+    private EstadoContenedor estado;
     private Double peso;
     private Double volumen;
     private boolean refrigerado;
