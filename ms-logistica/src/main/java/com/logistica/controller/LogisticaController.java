@@ -185,4 +185,16 @@ public class LogisticaController {
     public ResponseEntity<List<Tramo>> listarTramos() {
         return ResponseEntity.ok(tramoService.listarTramos());
     }
+
+    @GetMapping("/rutas/alternativas")
+    public ResponseEntity<List<DistanciaResponse>> obtenerRutasAlternativas(
+            @RequestParam Double latOrigen,
+            @RequestParam Double lonOrigen,
+            @RequestParam Double latDestino,
+            @RequestParam Double lonDestino) {
+
+        log.info("Solicitando rutas alternativas");
+        return ResponseEntity.ok(rutaService.obtenerRutasAlternativas(
+                latOrigen, lonOrigen, latDestino, lonDestino));
+    }
 }

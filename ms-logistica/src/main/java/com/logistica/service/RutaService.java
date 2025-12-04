@@ -177,4 +177,20 @@ public class RutaService {
 
         return new DistanciaResponse(distanciaTotal, tiempoTotal);
     }
+
+    /**
+     * Obtiene rutas alternativas entre dos puntos
+     */
+    public List<DistanciaResponse> obtenerRutasAlternativas(Double latOrigen, Double lonOrigen,
+            Double latDestino, Double lonDestino) {
+
+        log.info("Obteniendo rutas alternativas: ({}, {}) -> ({}, {})", latOrigen, lonOrigen, latDestino, lonDestino);
+
+        List<OsrmDistanceResponse> osrmResponses = osrmClient.getAlternativeRoutes(
+                latOrigen, lonOrigen, latDestino, lonDestino);
+
+        return osrmResponses.stream()
+                .map(r -> new DistanciaResponse(r.getDistanceKm(), r.getDurationSeconds()))
+                .toList();
+    }
 }
