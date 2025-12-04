@@ -326,7 +326,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"nombre\": \"Logística Express SA\",\n  \"licencia\": \"LIC-998877\",\n  \"contacto\": \"contacto@logistica.com\"\n}",
+							"raw": "{\n  \"nombre\": \"Transportista1\",\n  \"licencia\": \"LIC-998877\",\n  \"contacto\": \"contacto@logistica.com\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
