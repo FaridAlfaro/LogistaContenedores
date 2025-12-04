@@ -424,6 +424,9 @@
 									"var jsonData = pm.response.json();",
 									"// CORREGIDO: Se busca 'nroSolicitud' en lugar de 'numeroSolicitud'",
 									"if(jsonData.nroSolicitud) {",
+									"    pm.test(\"nroSolicitud es numérico\", function () {",
+									"        pm.expect(jsonData.nroSolicitud).to.be.a('number');",
+									"    });",
 									"    pm.collectionVariables.set(\"nroSolicitud\", jsonData.nroSolicitud);",
 									"    console.log(\"Solicitud creada: \" + jsonData.nroSolicitud);",
 									"} else {",
@@ -439,7 +442,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idCliente\": \"cliente-juan\",\n  \"idContenedor\": \"CONT-2024-X\",\n  \"origen\": {\n    \"dir\": \"Puerto Buenos Aires\",\n    \"lat\": -34.6037,\n    \"lon\": -58.3816\n  },\n  \"destino\": {\n    \"dir\": \"Córdoba Capital\",\n    \"lat\": -31.4201,\n    \"lon\": -64.1888\n  }\n}",
+							"raw": "{\n  \"email\": \"cliente_flowbox_{{$randomInt}}@test.com\",\n  \"password\": \"password123\",\n  \"tipoCarga\": \"ELECTRONICA\",\n  \"peso\": 1500.0,\n  \"refrigerado\": false,\n  \"origen\": {\n    \"lat\": -34.6037,\n    \"lon\": -58.3816\n  },\n  \"destino\": {\n    \"lat\": -31.4201,\n    \"lon\": -64.1888\n  }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -663,7 +666,7 @@
 		},
 		{
 			"key": "clientSecret",
-			"value": "backend-secret",
+			"value": "RjFJc8RKqgfjZjeRBvzGkgcJhsngGLNQ",
 			"type": "string"
 		},
 		{
