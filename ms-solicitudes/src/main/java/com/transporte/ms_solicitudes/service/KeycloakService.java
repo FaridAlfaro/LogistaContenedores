@@ -78,8 +78,13 @@ public class KeycloakService {
                     usersResource.get(userId).roles().realmLevel().add(Collections.singletonList(roleRep));
 
                     // 5. GARANTÍA DE ESTADO: Forzar la actualización
-                    // Esto asegura que RequiredActions se persistan como vacío
-                    usersResource.get(userId).update(user);
+                    // Recuperamos el usuario para asegurarnos de tener la última versión y limpiar
+                    // acciones
+                    UserRepresentation savedUser = usersResource.get(userId).toRepresentation();
+                    savedUser.setEmailVerified(true);
+                    savedUser.setEnabled(true);
+                    savedUser.setRequiredActions(Collections.emptyList());
+                    usersResource.get(userId).update(savedUser);
 
                 } catch (jakarta.ws.rs.NotFoundException e) {
                     throw new RuntimeException(
