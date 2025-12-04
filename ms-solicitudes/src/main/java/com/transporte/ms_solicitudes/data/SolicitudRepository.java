@@ -7,6 +7,6 @@ import com.transporte.ms_solicitudes.model.Solicitud;
 
 import java.util.List;
 
-public interface SolicitudRepository extends JpaRepository<Solicitud, String>{
+public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
     List<Solicitud> findByEstado(EstadoSolicitud estado);
 }

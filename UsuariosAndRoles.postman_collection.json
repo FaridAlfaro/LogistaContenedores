@@ -81,20 +81,20 @@
             ]
         },
         {
-            "name": "2. Escenario Cliente (ms-solicitudes)",
+            "name": "2. Escenario Transportista (ms-flota)",
             "item": [
                 {
-                    "name": "2.1 Crear Solicitud (Carga + Auto-Registro)",
+                    "name": "2.1 Crear Transportista (Protegido)",
                     "event": [
                         {
                             "listen": "prerequest",
                             "script": {
                                 "exec": [
                                     "const randomId = Math.floor(Math.random() * 10000);",
-                                    "const email = `cliente${randomId}@gmail.com`;",
-                                    "pm.collectionVariables.set(\"newClientEmail\", email);",
-                                    "pm.collectionVariables.set(\"newClientPass\", \"clientePass123\");",
-                                    "console.log(\"🚀 Solicitando envío para: \" + email);"
+                                    "const email = `transpo${randomId}@test.com`;",
+                                    "pm.collectionVariables.set(\"newTranspEmail\", email);",
+                                    "pm.collectionVariables.set(\"newTranspPass\", \"password123\");",
+                                    "console.log(\"🚀 Creando transportista con Email: \" + email);"
                                 ],
                                 "type": "text/javascript"
                             }
@@ -103,15 +103,62 @@
                             "listen": "test",
                             "script": {
                                 "exec": [
-                                    "pm.test(\"Solicitud creada (200 OK)\", function () {",
+                                    "pm.test(\"Transportista creado exitosamente (201)\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{tokenOperador}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nombre\": \"Transportista Test Postman\",\n  \"licencia\": \"LIC-{{$randomInt}}\",\n  \"contacto\": \"{{newTranspEmail}}\",\n  \"password\": \"{{newTranspPass}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/flota/transportistas",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "flota",
+                                "transportistas"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2.2 Verificar Login Transportista (Keycloak)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Login exitoso con nuevo transportista\", function () {",
                                     "    pm.response.to.have.status(200);",
-                                    "});",
-                                    "",
-                                    "var jsonData = pm.response.json();",
-                                    "if(jsonData.nroSolicitud) {",
-                                    "    pm.collectionVariables.set(\"idSolicitud\", jsonData.nroSolicitud);",
-                                    "    console.log(\"📦 Solicitud Creada ID: \" + jsonData.nroSolicitud);",
-                                    "}"
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData).to.have.property(\"access_token\");",
+                                    "    console.log(\"✅ Login Transportista OK\");",
+                                    "});"
                                 ],
                                 "type": "text/javascript"
                             }
@@ -122,12 +169,107 @@
                         "header": [
                             {
                                 "key": "Content-Type",
-                                "value": "application/json"
+                                "value": "application/x-www-form-urlencoded"
                             }
                         ],
                         "body": {
+                            "mode": "urlencoded",
+                            "urlencoded": [
+                                {
+                                    "key": "client_id",
+                                    "value": "backend-client",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "client_secret",
+                                    "value": "{{clientSecret}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "username",
+                                    "value": "{{newTranspEmail}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{newTranspPass}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "grant_type",
+                                    "value": "password",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+                            "host": [
+                                "{{keycloakUrl}}"
+                            ],
+                            "path": [
+                                "realms",
+                                "{{realm}}",
+                                "protocol",
+                                "openid-connect",
+                                "token"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "3. Escenario Cliente (ms-solicitudes)",
+            "item": [
+                {
+                    "name": "3.1 Crear Solicitud Pública (Auto-Registro)",
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "const randomId = Math.floor(Math.random() * 10000);",
+                                    "const email = `cliente${randomId}@gmail.com`;",
+                                    "pm.collectionVariables.set(\"newClientEmail\", email);",
+                                    "pm.collectionVariables.set(\"newClientPass\", \"clientePass123\");",
+                                    "console.log(\"🚀 Creando cliente público: \" + email);"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        },
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Solicitud creada (y usuario registrado)\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.nroSolicitud) {",
+                                    "    pm.test(\"nroSolicitud es numérico\", function () {",
+                                    "        pm.expect(jsonData.nroSolicitud).to.be.a('number');",
+                                    "    });",
+                                    "    pm.collectionVariables.set(\"idSolicitud\", jsonData.nroSolicitud);",
+                                    "    console.log(\"📦 Solicitud Creada ID: \" + jsonData.nroSolicitud);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"email\": \"{{newClientEmail}}\",\n  \"password\": \"{{newClientPass}}\",\n  \n  \"tipoCarga\": \"ELECTRONICA_FRAGIL\",\n  \"peso\": 1250.5,\n  \"refrigerado\": false,\n\n  \"origen\": {\n    \"lat\": -34.6037,\n    \"lon\": -58.3816\n  },\n  \"destino\": {\n    \"lat\": -31.4201,\n    \"lon\": -64.1888\n  }\n}"
+                            "raw": "{\n  \"email\": \"{{newClientEmail}}\",\n  \"password\": \"{{newClientPass}}\",\n  \"tipoCarga\": \"Electrónica\",\n  \"peso\": 500.5,\n  \"refrigerado\": true,\n  \"origen\": {\n    \"lat\": -34.6037,\n    \"lon\": -58.3816\n  },\n  \"destino\": {\n    \"lat\": -31.4201,\n    \"lon\": -64.1888\n  }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         },
                         "url": {
                             "raw": "{{baseUrl}}/api/v1/solicitudes",
@@ -138,6 +280,76 @@
                                 "api",
                                 "v1",
                                 "solicitudes"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "3.2 Verificar Login Cliente (Keycloak)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Login exitoso con nuevo cliente\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    pm.expect(pm.response.json()).to.have.property(\"access_token\");",
+                                    "    console.log(\"✅ Login Cliente OK\");",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/x-www-form-urlencoded"
+                            }
+                        ],
+                        "body": {
+                            "mode": "urlencoded",
+                            "urlencoded": [
+                                {
+                                    "key": "client_id",
+                                    "value": "backend-client",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "client_secret",
+                                    "value": "{{clientSecret}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "username",
+                                    "value": "{{newClientEmail}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{newClientPass}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "grant_type",
+                                    "value": "password",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+                            "host": [
+                                "{{keycloakUrl}}"
+                            ],
+                            "path": [
+                                "realms",
+                                "{{realm}}",
+                                "protocol",
+                                "openid-connect",
+                                "token"
                             ]
                         }
                     }
@@ -164,7 +376,8 @@
         {
             "key": "clientSecret",
             "value": "RjFJc8RKqgfjZjeRBvzGkgcJhsngGLNQ",
-            "type": "string"
+            "type": "string",
+            "description": "Copia esto de la consola de Keycloak > Clients > Credentials"
         },
         {
             "key": "operatorUser",
@@ -178,6 +391,16 @@
         },
         {
             "key": "tokenOperador",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "newTranspEmail",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "newTranspPass",
             "value": "",
             "type": "string"
         },

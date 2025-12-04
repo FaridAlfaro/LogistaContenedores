@@ -55,7 +55,6 @@ public class SolicitudesService {
 
             // c. Crear en DB Local con ID Generado
             cliente = Cliente.builder()
-                    .id(UUID.randomUUID().toString()) // Generamos UUID
                     .email(req.email())
                     .nombre("Cliente " + req.email()) // Nombre temporal
                     .build();
@@ -65,7 +64,7 @@ public class SolicitudesService {
 
         // 3. Crear Solicitud
         Solicitud solicitud = Solicitud.builder()
-                .idCliente(cliente.getId()) // Usamos el ID interno (UUID), no el email
+                .idCliente(cliente.getId()) // Usamos el ID interno (Long), no el email
                 .idContenedor(contenedor.getIdContenedor())
                 .origen(Localizacion.builder()
                         .lat(req.origen().lat())
@@ -81,7 +80,7 @@ public class SolicitudesService {
         return solicitudRepository.save(solicitud);
     }
 
-    public Optional<Solicitud> findByNro(String nro) {
+    public Optional<Solicitud> findByNro(Long nro) {
         return solicitudRepository.findById(nro);
     }
 
@@ -94,23 +93,23 @@ public class SolicitudesService {
     }
 
     @Transactional
-    public Optional<Solicitud> aceptarSolicitud(String nro) {
+    public Optional<Solicitud> aceptarSolicitud(Long nro) {
         // Como el estado inicial es PROGRAMADA, este método podría ser redundante
         // o usarse para re-confirmar. Lo mantenemos para compatibilidad.
         return cambiarEstado(nro, EstadoSolicitud.ACEPTADA);
     }
 
     @Transactional
-    public Optional<Solicitud> confirmarEnTransito(String nro) {
+    public Optional<Solicitud> confirmarEnTransito(Long nro) {
         return cambiarEstado(nro, EstadoSolicitud.EN_TRANSITO);
     }
 
     @Transactional
-    public Optional<Solicitud> confirmarEntrega(String nro) {
+    public Optional<Solicitud> confirmarEntrega(Long nro) {
         return cambiarEstado(nro, EstadoSolicitud.ENTREGADA);
     }
 
-    private Optional<Solicitud> cambiarEstado(String nro, EstadoSolicitud nuevoEstado) {
+    private Optional<Solicitud> cambiarEstado(Long nro, EstadoSolicitud nuevoEstado) {
         return solicitudRepository.findById(nro).map(s -> {
             s.setEstado(nuevoEstado);
             return solicitudRepository.save(s);

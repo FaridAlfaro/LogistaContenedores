@@ -16,8 +16,9 @@ public class Cliente {
 
     @Id
     @Column(name = "id_cliente")
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id; // UUID Generado automáticamente (No es el email)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cliente_seq")
+    @SequenceGenerator(name = "cliente_seq", sequenceName = "cliente_seq", allocationSize = 1)
+    private Long id; // ID Numérico Autoincremental
 
     @Column(nullable = false)
     private String nombre;

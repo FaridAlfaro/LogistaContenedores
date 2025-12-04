@@ -11,7 +11,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import com.transporte.ms_solicitudes.api.GlobalExceptionHandler; // O tu excepcion custom
 
 import java.util.Collections;
 import java.util.List;
@@ -49,18 +48,18 @@ public class KeycloakService {
         // 1. Validar si existe
         List<UserRepresentation> existentes = usersResource.searchByUsername(email, true);
         if (!existentes.isEmpty()) {
-            // Usuario ya existe, asumimos que está bien y retornamos
-            // Podríamos intentar asignarle el rol si no lo tiene, pero por ahora
-            // retornamos.
+            // Usuario ya existe, retornamos
             return;
         }
 
         // 2. Crear Usuario
         UserRepresentation user = new UserRepresentation();
-        user.setUsername(email); // Username = Email
+        user.setUsername(email);
         user.setEmail(email);
         user.setEnabled(true);
         user.setEmailVerified(true);
+        // AÑADIDO: Indicar explícitamente que no hay acciones requeridas
+        user.setRequiredActions(Collections.emptyList());
 
         try (Response response = usersResource.create(user)) {
             if (response.getStatus() == 201) {
@@ -73,16 +72,14 @@ public class KeycloakService {
                 cred.setValue(password);
                 usersResource.get(userId).resetPassword(cred);
 
-                // 4. Asignar Rol (Manejo de Errores Críticos)
+                // 4. Asignar Rol
                 try {
-                    // BUSCAR EL ROL
-                    // NOTA: Si esto falla con 403, falta el rol 'view-realm' en el Service Account
                     RoleRepresentation roleRep = realmResource.roles().get(rol).toRepresentation();
-
-                    // ASIGNAR EL ROL
-                    // NOTA: Si esto falla con 403, falta el rol 'manage-users' (aunque ya creamos
-                    // el user)
                     usersResource.get(userId).roles().realmLevel().add(Collections.singletonList(roleRep));
+
+                    // 5. GARANTÍA DE ESTADO: Forzar la actualización
+                    // Esto asegura que RequiredActions se persistan como vacío
+                    usersResource.get(userId).update(user);
 
                 } catch (jakarta.ws.rs.NotFoundException e) {
                     throw new RuntimeException(
@@ -91,7 +88,7 @@ public class KeycloakService {
                     throw new RuntimeException(
                             "ERROR PERMISOS KEYCLOAK (403): El Service Account no tiene permiso para ver/asignar roles. "
                                     +
-                                    "Asigne 'view-realm', 'view-users' y 'manage-users' del cliente 'realm-management' al Service Account de 'backend-client'.");
+                                    "Asigne 'view-realm', 'view-users' y 'manage-users' del cliente 'realm-management' al Service Account.");
                 }
 
             } else if (response.getStatus() == 409) {

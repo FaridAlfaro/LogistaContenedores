@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,8 +19,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Contenedor {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String idContenedor; // Identificación única
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "contenedor_seq")
+    @SequenceGenerator(name = "contenedor_seq", sequenceName = "contenedor_seq", allocationSize = 1)
+    private Long idContenedor; // Identificación única
     private String tipoCarga;
     private Double peso;
     private Double volumen;

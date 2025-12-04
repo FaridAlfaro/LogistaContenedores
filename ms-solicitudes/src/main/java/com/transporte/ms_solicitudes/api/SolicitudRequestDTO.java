@@ -21,7 +21,7 @@ public record SolicitudRequestDTO(
 }
 
 record SolicitudResponseDTO(
-                String nroSolicitud,
+                Long nroSolicitud,
                 String estado) {
 }
 

@@ -2,46 +2,47 @@ server:
   port: ${SERVER_PORT:8081}
 
 spring:
-    application:
-        name: ms-solicitudes
-    cloud:
-        compatibility-verifier:
-            enabled: false
-    autoconfigure:
-        exclude:
-            - org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration
-    datasource:
-        url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/flowboxdb}
-        username: ${SPRING_DATASOURCE_USERNAME:flowbox_user}
-        password: ${SPRING_DATASOURCE_PASSWORD:flowbox_pass}
-    jpa:
-        hibernate:
-            ddl-auto: update # Cambiado a update para no perder datos al reiniciar
-        show-sql: true
-        properties:
-            hibernate:
-                connection:
-                    time_zone: UTC
-    security:
-        oauth2:
-            resourceserver:
-                jwt:
-                    issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI:http://localhost:8088/realms/tpi-backend}
-                    jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI:http://localhost:8088/realms/tpi-backend/protocol/openid-connect/certs}
+  application:
+    name: ms-solicitudes
+  cloud:
+    compatibility-verifier:
+      enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration
+  datasource:
+    # URL Dinámica para Docker vs Localhost
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/flowboxdb?options=-c%20timezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:flowbox_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:flowbox_pass}
+  jpa:
+    hibernate:
+      # IMPORTANTE: create-drop para que regenere las tablas con IDs numéricos
+      ddl-auto: create-drop 
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI:http://localhost:8088/realms/tpi-backend}
+          jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI:http://localhost:8088/realms/tpi-backend/protocol/openid-connect/certs}
 
 keycloak:
-    # CORRECCION 502: Usar variable de entorno para poder inyectar "http://keycloak:8080" desde Docker
-    auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://localhost:8088}
-    realm: tpi-backend
-    resource: backend-client
-    credentials:
-      secret: RjFJc8RKqgfjZjeRBvzGkgcJhsngGLNQ # Reemplazar con env var en prod
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://localhost:8088}
+  realm: tpi-backend
+  resource: backend-client
+  credentials:
+    secret: RjFJc8RKqgfjZjeRBvzGkgcJhsngGLNQ
 
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-    
 eureka:
   client:
     serviceUrl:

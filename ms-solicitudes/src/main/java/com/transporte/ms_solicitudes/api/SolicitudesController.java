@@ -34,7 +34,7 @@ public class SolicitudesController {
     }
 
     @GetMapping("/{nro}")
-    public ResponseEntity<Solicitud> porNro(@PathVariable String nro) {
+    public ResponseEntity<Solicitud> porNro(@PathVariable Long nro) {
         return service.findByNro(nro)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -51,21 +51,21 @@ public class SolicitudesController {
     }
 
     @PutMapping("/{nro}/aceptar")
-    public ResponseEntity<Solicitud> aceptar(@PathVariable String nro) {
+    public ResponseEntity<Solicitud> aceptar(@PathVariable Long nro) {
         return service.aceptarSolicitud(nro)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{nro}/en-transito")
-    public ResponseEntity<Solicitud> enTransito(@PathVariable String nro) {
+    public ResponseEntity<Solicitud> enTransito(@PathVariable Long nro) {
         return service.confirmarEnTransito(nro)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{nro}/entregada")
-    public ResponseEntity<Solicitud> entregada(@PathVariable String nro) {
+    public ResponseEntity<Solicitud> entregada(@PathVariable Long nro) {
         return service.confirmarEntrega(nro)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

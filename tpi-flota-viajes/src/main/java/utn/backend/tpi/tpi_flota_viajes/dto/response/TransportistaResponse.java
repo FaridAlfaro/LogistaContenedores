@@ -2,7 +2,6 @@ package utn.backend.tpi.tpi_flota_viajes.dto.response;
 
 import lombok.*;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Data
 @Builder

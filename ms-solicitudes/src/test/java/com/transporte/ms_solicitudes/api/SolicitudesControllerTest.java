@@ -50,7 +50,7 @@ public class SolicitudesControllerTest {
                                 destino);
 
                 Solicitud solicitud = Solicitud.builder()
-                                .nroSolicitud("12345678")
+                                .nroSolicitud(12345678L)
                                 .estado(EstadoSolicitud.CREADA)
                                 .build();
 
@@ -60,8 +60,8 @@ public class SolicitudesControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(req)))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.nroSolicitud").value("12345678"))
-                                .andExpect(jsonPath("$.estado").value("ACEPTADA"));
+                                .andExpect(jsonPath("$.nroSolicitud").value(12345678))
+                                .andExpect(jsonPath("$.estado").value("CREADA"));
         }
 
         @Test
@@ -75,11 +75,11 @@ public class SolicitudesControllerTest {
         @Test
         public void testAceptarSolicitud() throws Exception {
                 Solicitud solicitud = Solicitud.builder()
-                                .nroSolicitud("12345678")
+                                .nroSolicitud(12345678L)
                                 .estado(EstadoSolicitud.ACEPTADA)
                                 .build();
 
-                when(service.aceptarSolicitud("12345678")).thenReturn(Optional.of(solicitud));
+                when(service.aceptarSolicitud(12345678L)).thenReturn(Optional.of(solicitud));
 
                 mockMvc.perform(put("/api/v1/solicitudes/12345678/aceptar"))
                                 .andExpect(status().isOk())
