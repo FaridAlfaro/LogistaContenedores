@@ -1,8 +1,6 @@
 package com.transporte.ms_solicitudes.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,8 +13,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Cliente {
+
     @Id
-    private String idCliente; // Puede ser el mismo ID que en Keycloak o un CUIT/DNI
+    @Column(name = "id_cliente")
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id; // UUID Generado automáticamente (No es el email)
+
+    @Column(nullable = false)
     private String nombre;
-    private String email;
+
+    @Column(unique = true, nullable = false)
+    private String email; // El email es único y sirve para login/busqueda
 }

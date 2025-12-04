@@ -1,6 +1,8 @@
 package com.transporte.ms_solicitudes.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -16,7 +18,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Contenedor {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String idContenedor; // Identificación única
+    private String tipoCarga;
     private Double peso;
     private Double volumen;
     private boolean refrigerado;

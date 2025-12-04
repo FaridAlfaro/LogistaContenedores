@@ -1,6 +1,7 @@
 package com.transporte.ms_solicitudes.data;
 
 import com.transporte.ms_solicitudes.model.EstadoSolicitud;
+import com.transporte.ms_solicitudes.model.Localizacion;
 import com.transporte.ms_solicitudes.model.Solicitud;
 import org.springframework.stereotype.Component;
 
@@ -16,14 +17,18 @@ public class SolicitudesStore {
     // Nueva solicitud
     public Solicitud crearSolicitud(String idCliente, String idContenedor, Double destinoLat, Double destinoLon) {
         String nro = UUID.randomUUID().toString().substring(0, 8);
+
         Solicitud s = Solicitud.builder()
                 .nroSolicitud(nro)
-                .estado(EstadoSolicitud.BORRADOR)
+                .estado(EstadoSolicitud.CREADA)
                 .idCliente(idCliente)
                 .idContenedor(idContenedor)
-                .destinoLatitud(destinoLat)
-                .destinoLongitud(destinoLon)
+                .destino(Localizacion.builder()
+                        .lat(destinoLat)
+                        .lon(destinoLon)
+                        .build())
                 .build();
+
         data.put(nro, s);
         return s;
     }
@@ -34,7 +39,7 @@ public class SolicitudesStore {
 
     public List<Solicitud> findPendientes() {
         return data.values().stream()
-                .filter(s -> s.getEstado() == EstadoSolicitud.BORRADOR)
+                .filter(s -> s.getEstado() == EstadoSolicitud.CREADA)
                 .collect(Collectors.toList());
     }
 

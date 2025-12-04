@@ -6,7 +6,6 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
-
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
@@ -18,8 +17,12 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchange -> exchange
                         .pathMatchers("/actuator/**").permitAll()
-                        .anyExchange().authenticated()
-                )
+                        .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/solicitudes").permitAll() // Permitir
+                                                                                                                   // creación
+                                                                                                                   // pública
+                                                                                                                   // de
+                                                                                                                   // solicitudes
+                        .anyExchange().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt())
                 .build();
     }

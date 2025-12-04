@@ -1,0 +1,195 @@
+{
+    "info": {
+        "_postman_id": "b3e2a1c4-9d8f-4b5a-9c7d-1e2f3a4b5c6d",
+        "name": "Pruebas TPI - Flujos Completos",
+        "description": "Colección actualizada con lógica de negocio real (creación automática de contenedores e IDs autogenerados).",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. Preparación (Login Operador)",
+            "item": [
+                {
+                    "name": "Obtener Token Operador",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.expect(pm.response.code).to.eql(200);",
+                                    "pm.collectionVariables.set(\"tokenOperador\", jsonData.access_token);",
+                                    "console.log(\"✅ Token de Operador obtenido\");"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/x-www-form-urlencoded"
+                            }
+                        ],
+                        "body": {
+                            "mode": "urlencoded",
+                            "urlencoded": [
+                                {
+                                    "key": "client_id",
+                                    "value": "backend-client",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "client_secret",
+                                    "value": "{{clientSecret}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "username",
+                                    "value": "{{operatorUser}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "{{operatorPass}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "grant_type",
+                                    "value": "password",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+                            "host": [
+                                "{{keycloakUrl}}"
+                            ],
+                            "path": [
+                                "realms",
+                                "{{realm}}",
+                                "protocol",
+                                "openid-connect",
+                                "token"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. Escenario Cliente (ms-solicitudes)",
+            "item": [
+                {
+                    "name": "2.1 Crear Solicitud (Carga + Auto-Registro)",
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "const randomId = Math.floor(Math.random() * 10000);",
+                                    "const email = `cliente${randomId}@gmail.com`;",
+                                    "pm.collectionVariables.set(\"newClientEmail\", email);",
+                                    "pm.collectionVariables.set(\"newClientPass\", \"clientePass123\");",
+                                    "console.log(\"🚀 Solicitando envío para: \" + email);"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        },
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Solicitud creada (200 OK)\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "var jsonData = pm.response.json();",
+                                    "if(jsonData.nroSolicitud) {",
+                                    "    pm.collectionVariables.set(\"idSolicitud\", jsonData.nroSolicitud);",
+                                    "    console.log(\"📦 Solicitud Creada ID: \" + jsonData.nroSolicitud);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"{{newClientEmail}}\",\n  \"password\": \"{{newClientPass}}\",\n  \n  \"tipoCarga\": \"ELECTRONICA_FRAGIL\",\n  \"peso\": 1250.5,\n  \"refrigerado\": false,\n\n  \"origen\": {\n    \"lat\": -34.6037,\n    \"lon\": -58.3816\n  },\n  \"destino\": {\n    \"lat\": -31.4201,\n    \"lon\": -64.1888\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/solicitudes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "solicitudes"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:8080",
+            "type": "string"
+        },
+        {
+            "key": "keycloakUrl",
+            "value": "http://localhost:8088",
+            "type": "string"
+        },
+        {
+            "key": "realm",
+            "value": "tpi-backend",
+            "type": "string"
+        },
+        {
+            "key": "clientSecret",
+            "value": "RjFJc8RKqgfjZjeRBvzGkgcJhsngGLNQ",
+            "type": "string"
+        },
+        {
+            "key": "operatorUser",
+            "value": "operador",
+            "type": "string"
+        },
+        {
+            "key": "operatorPass",
+            "value": "operador",
+            "type": "string"
+        },
+        {
+            "key": "tokenOperador",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "newClientEmail",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "newClientPass",
+            "value": "",
+            "type": "string"
+        }
+    ]
+}

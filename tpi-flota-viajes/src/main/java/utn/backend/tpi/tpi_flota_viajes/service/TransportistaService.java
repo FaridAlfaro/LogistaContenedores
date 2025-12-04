@@ -25,8 +25,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class TransportistaService {
+
     private final TransportistaRepository transportistaRepository;
     private final CamionRepository camionRepository;
+    private final KeycloakService keycloakService;
 
     /**
      * Crear un nuevo transportista
@@ -43,16 +45,22 @@ public class TransportistaService {
             return TransportistaMapper.toResponse(existing.get(0));
         }
 
+        // 1. Crear en Keycloak
+        keycloakService.crearUsuario(
+                dto.getContacto(), // username // email (CORREGIDO: Usar contacto/email)
+                dto.getPassword(), // password
+                "TRANSPORTISTA" // rol
+        );
+
         try {
-            Transportista transportista = Transportista.builder()
-                    .nombre(dto.getNombre())
-                    .licencia(dto.getLicencia().toUpperCase()) // Normalizar
-                    .contacto(dto.getContacto())
-                    .activo(true) // Nuevo transportista siempre activo
-                    .build();
+            // 2. Crear en DB Local
+            Transportista transportista = TransportistaMapper.toEntity(dto);
+            transportista.setContacto(dto.getContacto()); // Aseguramos que el contacto sea el email
+            transportista.setActivo(true);
 
             Transportista guardado = transportistaRepository.save(transportista);
             log.info("Transportista creado exitosamente con ID: {}", guardado.getId());
+
             return TransportistaMapper.toResponse(guardado);
 
         } catch (DataIntegrityViolationException e) {
@@ -156,5 +164,4 @@ public class TransportistaService {
                 .map(TransportistaMapper::toResponse)
                 .toList();
     }
-
 }

@@ -33,16 +33,10 @@ public class ClientConfig {
     @Bean
     public RestClient restClient(OAuth2AuthorizedClientManager authorizedClientManager) {
         ClientHttpRequestInterceptor interceptor = (request, body, execution) -> {
-            // Logic to inject the token would go here or use a dedicated interceptor class
-            // For simplicity in this conceptual example, we are setting up the structure.
-            // In a full implementation, you would use
-            // authorizedClientManager.authorize(...)
-            // to get the token and add it to the Authorization header.
             return execution.execute(request, body);
         };
 
         return RestClient.builder()
-                // .requestInterceptor(interceptor) // Uncomment and implement interceptor logic
                 .baseUrl("http://ms-logistica:8082")
                 .build();
     }

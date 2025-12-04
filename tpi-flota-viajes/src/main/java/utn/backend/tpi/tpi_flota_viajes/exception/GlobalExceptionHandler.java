@@ -16,109 +16,43 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Manejador global de excepciones
- * Se encarga de procesar todas las excepciones lanzadas en los Controllers
- * y devolver respuestas consistentes en formato JSON
- */
+// IMPORTS NECESARIOS PARA KEYCLOAK
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.NotAuthorizedException;
+
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
-        /**
-         * Maneja NotFoundException (404)
-         */
+
         @ExceptionHandler(NotFoundException.class)
-        public ResponseEntity<ErrorResponse> handleNotFoundException(
-                        NotFoundException ex,
-                        WebRequest request) {
-
+        public ResponseEntity<ErrorResponse> handleNotFoundException(NotFoundException ex, WebRequest request) {
                 log.warn("NotFoundException: {}", ex.getMessage());
-
-                ErrorResponse errorResponse = ErrorResponse.builder()
-                                .mensaje(ex.getMessage())
-                                .codigo("NOT_FOUND")
-                                .status(HttpStatus.NOT_FOUND.value())
-                                .timestamp(LocalDateTime.now())
-                                .path(request.getDescription(false).replace("uri=", ""))
-                                .build();
-
-                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+                return buildResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage(), request);
         }
 
-        /**
-         * Maneja ConflictException (409)
-         */
         @ExceptionHandler(ConflictException.class)
-        public ResponseEntity<ErrorResponse> handleConflictException(
-                        ConflictException ex,
-                        WebRequest request) {
-
+        public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex, WebRequest request) {
                 log.warn("ConflictException: {}", ex.getMessage());
-
-                ErrorResponse errorResponse = ErrorResponse.builder()
-                                .mensaje(ex.getMessage())
-                                .codigo("CONFLICT")
-                                .status(HttpStatus.CONFLICT.value())
-                                .timestamp(LocalDateTime.now())
-                                .path(request.getDescription(false).replace("uri=", ""))
-                                .build();
-
-                return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+                return buildResponse(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage(), request);
         }
 
-        /**
-         * Maneja BadRequestException (400)
-         */
         @ExceptionHandler(BadRequestException.class)
-        public ResponseEntity<ErrorResponse> handleBadRequestException(
-                        BadRequestException ex,
-                        WebRequest request) {
-
+        public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex, WebRequest request) {
                 log.warn("BadRequestException: {}", ex.getMessage());
-
-                ErrorResponse errorResponse = ErrorResponse.builder()
-                                .mensaje(ex.getMessage())
-                                .codigo("BAD_REQUEST")
-                                .status(HttpStatus.BAD_REQUEST.value())
-                                .timestamp(LocalDateTime.now())
-                                .path(request.getDescription(false).replace("uri=", ""))
-                                .build();
-
-                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+                return buildResponse(HttpStatus.BAD_REQUEST, "BAD_REQUEST", ex.getMessage(), request);
         }
 
-        /**
-         * Maneja ForbiddenException (403)
-         */
         @ExceptionHandler(ForbiddenException.class)
-        public ResponseEntity<ErrorResponse> handleForbiddenException(
-                        ForbiddenException ex,
-                        WebRequest request) {
-
+        public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException ex, WebRequest request) {
                 log.warn("ForbiddenException: {}", ex.getMessage());
-
-                ErrorResponse errorResponse = ErrorResponse.builder()
-                                .mensaje(ex.getMessage())
-                                .codigo("FORBIDDEN")
-                                .status(HttpStatus.FORBIDDEN.value())
-                                .timestamp(LocalDateTime.now())
-                                .path(request.getDescription(false).replace("uri=", ""))
-                                .build();
-
-                return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+                return buildResponse(HttpStatus.FORBIDDEN, "FORBIDDEN", ex.getMessage(), request);
         }
 
-        /**
-         * Maneja errores de validación (400)
-         * Se ejecuta cuando @Valid falla en los DTOs
-         */
         @ExceptionHandler(MethodArgumentNotValidException.class)
-        public ResponseEntity<ErrorResponse> handleValidationException(
-                        MethodArgumentNotValidException ex,
+        public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex,
                         WebRequest request) {
-
-                log.warn("Error de validación en request");
-
+                log.warn("Error de validación");
                 List<String> detalles = new ArrayList<>();
                 ex.getBindingResult().getFieldErrors()
                                 .forEach(error -> detalles.add(error.getField() + ": " + error.getDefaultMessage()));
@@ -131,84 +65,62 @@ public class GlobalExceptionHandler {
                                 .path(request.getDescription(false).replace("uri=", ""))
                                 .detalles(detalles)
                                 .build();
-
                 return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         }
 
-        /**
-         * Maneja cualquier otra excepción no prevista (500)
-         */
-        @ExceptionHandler(Exception.class)
-        public ResponseEntity<ErrorResponse> handleGenericException(
-                        Exception ex,
-                        WebRequest request) {
+        // --- NUEVO: MANEJO DE ERRORES DE KEYCLOAK (JAX-RS) ---
+        @ExceptionHandler({ ProcessingException.class, WebApplicationException.class })
+        public ResponseEntity<ErrorResponse> handleKeycloakException(RuntimeException ex, WebRequest request) {
+                log.error("Error comunicación Keycloak: {}", ex.getMessage());
 
-                log.error("Error no controlado: {}", ex.getMessage(), ex);
+                HttpStatus status = HttpStatus.BAD_GATEWAY;
+                String mensaje = "Error de comunicación con el servidor de identidad.";
 
-                ErrorResponse errorResponse = ErrorResponse.builder()
-                                .mensaje("Error interno del servidor")
-                                .codigo("INTERNAL_SERVER_ERROR")
-                                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                                .timestamp(LocalDateTime.now())
-                                .path(request.getDescription(false).replace("uri=", ""))
-                                .build();
+                if (ex instanceof NotAuthorizedException) {
+                        status = HttpStatus.UNAUTHORIZED;
+                        mensaje = "Error de configuración: Backend no autorizado en Keycloak (Revisar Client Secret).";
+                } else if (ex instanceof WebApplicationException webEx) {
+                        int code = webEx.getResponse().getStatus();
+                        if (code >= 400 && code < 500) {
+                                status = HttpStatus.BAD_REQUEST; // O CONFLICT según el caso
+                                mensaje = "Keycloak rechazó la petición: " + webEx.getMessage();
+                        }
+                }
 
-                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+                return buildResponse(status, "IDENTITY_PROVIDER_ERROR", mensaje, request);
         }
 
-        // Maneja excepciones que se pueden escapar al crear dos pk iguales al mismo
-        // tiempo
         @ExceptionHandler(DataIntegrityViolationException.class)
-        public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
-                        DataIntegrityViolationException ex,
+        public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex,
                         WebRequest request) {
-
-                log.error("Violación de constraint de integridad: {}", ex.getMessage());
-
-                ErrorResponse errorResponse = ErrorResponse.builder()
-                                .mensaje("Error: Los datos violan restricciones de integridad (probablemente duplicado)")
-                                .codigo("DATA_INTEGRITY_VIOLATION")
-                                .status(HttpStatus.CONFLICT.value())
-                                .timestamp(LocalDateTime.now())
-                                .path(request.getDescription(false).replace("uri=", ""))
-                                .build();
-
-                return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+                log.error("Integrity Violation: {}", ex.getMessage());
+                return buildResponse(HttpStatus.CONFLICT, "DATA_INTEGRITY_VIOLATION",
+                                "Error de datos duplicados o referencia inválida.", request);
         }
 
         @ExceptionHandler({ ResourceAccessException.class, RestClientException.class })
-        public ResponseEntity<ErrorResponse> handleExternalServiceException(
-                        Exception ex,
-                        WebRequest request) {
-
-                log.error("Error de comunicación con microservicio externo: {}", ex.getMessage());
-
-                ErrorResponse errorResponse = ErrorResponse.builder()
-                                .mensaje("El servicio de logística no está disponible o respondió con error.")
-                                .codigo("EXTERNAL_SERVICE_ERROR")
-                                .status(HttpStatus.BAD_GATEWAY.value()) // 502 es mejor que 500 aquí
-                                .timestamp(LocalDateTime.now())
-                                .path(request.getDescription(false).replace("uri=", ""))
-                                .build();
-
-                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_GATEWAY);
+        public ResponseEntity<ErrorResponse> handleExternalServiceException(Exception ex, WebRequest request) {
+                log.error("External Service Error: {}", ex.getMessage());
+                return buildResponse(HttpStatus.BAD_GATEWAY, "EXTERNAL_SERVICE_ERROR",
+                                "Servicio externo no disponible.", request);
         }
 
-        @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
-        public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
-                        org.springframework.http.converter.HttpMessageNotReadableException ex,
+        @ExceptionHandler(Exception.class)
+        public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, WebRequest request) {
+                log.error("Error no controlado: {}", ex.getMessage(), ex);
+                return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR",
+                                "Error interno del servidor.", request);
+        }
+
+        private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String code, String message,
                         WebRequest request) {
-
-                log.warn("Error de lectura del mensaje HTTP: {}", ex.getMessage());
-
-                ErrorResponse errorResponse = ErrorResponse.builder()
-                                .mensaje("Cuerpo de la solicitud inválido o mal formado")
-                                .codigo("INVALID_REQUEST_BODY")
-                                .status(HttpStatus.BAD_REQUEST.value())
+                ErrorResponse response = ErrorResponse.builder()
+                                .mensaje(message)
+                                .codigo(code)
+                                .status(status.value())
                                 .timestamp(LocalDateTime.now())
                                 .path(request.getDescription(false).replace("uri=", ""))
                                 .build();
-
-                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(response, status);
         }
 }

@@ -37,27 +37,31 @@ public class SolicitudesControllerTest {
 
         @Test
         public void testCrearSolicitud() throws Exception {
+                SolicitudRequestDTO.Localizacion origen = new SolicitudRequestDTO.Localizacion(-34.6037, -58.3816);
+                SolicitudRequestDTO.Localizacion destino = new SolicitudRequestDTO.Localizacion(-31.4201, -64.1888);
+
                 SolicitudRequestDTO req = new SolicitudRequestDTO(
-                                "cliente-1",
-                                "contenedor-1",
-                                new SolicitudRequestDTO.Localizacion("Origen", 0.0, 0.0),
-                                new SolicitudRequestDTO.Localizacion("Destino", 10.0, 10.0));
+                                "cliente@example.com", // email
+                                "password-1", // password
+                                "ELECTRONICA", // tipoCarga
+                                500.0, // peso
+                                false, // refrigerado
+                                origen,
+                                destino);
 
                 Solicitud solicitud = Solicitud.builder()
                                 .nroSolicitud("12345678")
-                                .estado(EstadoSolicitud.BORRADOR)
+                                .estado(EstadoSolicitud.CREADA)
                                 .build();
 
-                when(service.crearSolicitud(anyString(), anyString(), anyDouble(), anyDouble(), anyDouble(),
-                                anyDouble()))
-                                .thenReturn(solicitud);
+                when(service.crearSolicitud(req)).thenReturn(solicitud);
 
                 mockMvc.perform(post("/api/v1/solicitudes")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(req)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.nroSolicitud").value("12345678"))
-                                .andExpect(jsonPath("$.estado").value("BORRADOR"));
+                                .andExpect(jsonPath("$.estado").value("ACEPTADA"));
         }
 
         @Test

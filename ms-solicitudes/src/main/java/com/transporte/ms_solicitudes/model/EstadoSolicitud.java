@@ -1,9 +1,9 @@
 package com.transporte.ms_solicitudes.model;
 
 public enum EstadoSolicitud {
-    BORRADOR,
+    CREADA,
     ACEPTADA,
-    PROGRAMADA,
     EN_TRANSITO,
-    ENTREGADA
+    ENTREGADA,
+    CANCELADA
 }
